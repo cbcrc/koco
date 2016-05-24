@@ -1,0 +1,11 @@
+# osx noise
+.DS_Store
+profile
+
+#ignore sublime projects
+*.sublime-workspace
+
+#ignore packages 
+node_modules
+bower_components
+*.log
