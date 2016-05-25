@@ -1,10 +1,10 @@
 function requireIt(moduleName) {
     // todo: meilleure implémentation?
-    return require.context('..', true, /.*\.(js|html)$/)(moduleName);
+    return require.context('../../../src/', true, /.*\.(js|html)$/)(moduleName);
 }
 
 function requireItNpm(moduleName) {
-    return require.context('../../node_modules/', true, /koco-.*\.(js|html)$/)(moduleName);
+    return require.context('../../', true, /koco-.*\/src\/.*\.(js|html)$/)(moduleName);
 }
 
 // http://stackoverflow.com/questions/5999998/how-can-i-check-if-a-javascript-variable-is-function-type
