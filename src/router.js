@@ -138,6 +138,11 @@ function postActivateAsync(self) {
     });
 }
 
+const DEFAULT_SETTINGS = {
+    localBasePath: '.',
+    routerBasePath: './koco/src'
+};
+
 // TODO: Allow overriding page-activator in route config
 // todo: refactoring
 // remove functions that should be private from prototype .. ex. _getRegisteredPage
@@ -145,10 +150,13 @@ class Router {
     constructor(settings) {
         var self = this;
 
+        self.settings = Object.assign({}, DEFAULT_SETTINGS, settings);
+
         self.byroads = new Byroads();
 
         ko.components.register('router', {
             isHtmlOnly: true,
+            basePath: self.settings.routerBasePath,
             isNpm: true
         });
 
@@ -171,13 +179,7 @@ class Router {
         self.isNavigating = ko.observable(false);
         self.isActivating = ko.observable(false);
 
-        self.settings = {
-            localBasePath: '.'
-        };
-
         self.routerState = new RouterState(self);
-
-        self.settings = Object.assign({}, self.settings, settings);
 
         // todo: this sucks?
         self.router = document.getElementsByTagName('router')[0];
