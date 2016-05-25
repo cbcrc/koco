@@ -147,14 +147,9 @@ class Router {
 
         self.byroads = new Byroads();
 
-        // __moduleName is part of systemjs
-        // var routerBasePath = __moduleName.replace(/^(?:\/\/|[^\/]+)*\//, '');
-        // var routerBasePath = __fileName.replace(/^(?:\/\/|[^\/]+)*\//, '');
-        // routerBasePath = routerBasePath.substr(0, routerBasePath.lastIndexOf('/'));
-
         ko.components.register('router', {
             isHtmlOnly: true,
-            basePath: settings.routerBasePath
+            isNpm: true
         });
 
         self.context = ko.observable(null);
