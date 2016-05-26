@@ -1,6 +1,5 @@
 function requireIt(moduleName) {
-    // todo: meilleure implémentation?
-    return require.context('../../../src/', true, /.*\.(js|html)$/)(moduleName);
+    return require.context('../../../modules/', true, /.*\.(js|html)$/)(moduleName);
 }
 
 function requireItNpm(moduleName) {
