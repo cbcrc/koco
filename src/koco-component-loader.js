@@ -27,13 +27,20 @@ export default class KocoComponentLoader {
 
         if (finalComponentConfig.type === 'component') {
             const componentFullName = `${name}-component`;
-            const basePath = finalComponentConfig.basePath ||
-                `${this.options.localBasePath}/${componentFullName}`;
-            const moduleName = `${basePath}/${componentFullName}`;
+            // const basePath = finalComponentConfig.basePath ||
+            //     `${this.options.localBasePath}/${componentFullName}`;
+            // const moduleName = `${basePath}/${componentFullName}`;
 
-            const imported = importModule(moduleName,
-                finalComponentConfig.isHtmlOnly,
-                finalComponentConfig.isNpm);
+            // const imported = importModule(moduleName,
+            //     finalComponentConfig.isHtmlOnly,
+            //     finalComponentConfig.isNpm);
+
+            const imported = importModule(componentFullName, {
+                isHtmlOnly: finalComponentConfig.isHtmlOnly,
+                isNpm: finalComponentConfig.isNpm,
+                basePath: finalComponentConfig.basePath,
+                template: finalComponentConfig.template
+            });
 
             const result = {
                 template: ko.utils.parseHtmlFragment(imported.templateString)

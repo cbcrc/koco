@@ -73,10 +73,15 @@ function resetUrl(self) {
 function activateAsync(self, context) {
     return new Promise((resolve, reject) => {
         try {
-            let registeredPage = context.route.page;
-            let basePath = registeredPage.basePath || self.settings.localBasePath + '/' + registeredPage.componentName;
-            let moduleName = basePath + '/' + registeredPage.componentName;
-            let imported = importModule(moduleName, registeredPage.isHtmlOnly);
+             let registeredPage = context.route.page;
+            // let basePath = registeredPage.basePath || self.settings.localBasePath + '/' + registeredPage.componentName;
+            // let moduleName = basePath + '/' + registeredPage.componentName;
+            let imported = importModule(registeredPage.componentName, {
+                isHtmlOnly: registeredPage.isHtmlOnly,
+                basePath: registeredPage.basePath,
+                isNpm: registeredPage.isNpm,
+                template: registeredPage.template
+            });
             let result = {
                 template: ko.utils.parseHtmlFragment(imported.templateString)
             };

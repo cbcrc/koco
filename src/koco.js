@@ -95,7 +95,7 @@ class Koco {
         // http:// knockoutjs.com/documentation/binding-context.html)
         return new Promise((resolve, reject) => {
             try {
-                this.navigateAsync('', {
+                this.navigateAsync(this._router.currentUrl(), {
                     replace: true
                 }).then(() => {
                     resolve({ kocoContext: self._router.context });

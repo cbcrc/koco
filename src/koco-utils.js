@@ -13,17 +13,26 @@ export function isFunction(functionToCheck) {
     return functionToCheck && getType.toString.call(functionToCheck) === '[object Function]';
 }
 
-export function importModule(moduleName, htmlOnly, isNpm) {
-    const htmlFile = `${moduleName}.html`;
-    const jsFile = `${moduleName}.js`;
+const DEFAULT_CONFIGS = {
+    isHtmlOnly: false,
+    isNpm: false,
+    basePath: null,
+    template: null
+};
+
+export function importModule(moduleName, configs) {
+    const finalConfigs = Object.assing({}, configs, DEFAULT_CONFIGS);
+    const basePath = finalComponentConfig.basePath ||
+        `${this.options.localBasePath}/${moduleName}`;
+    const fullModuleName = `${basePath}/${moduleName}`;
+    const htmlFile = finalConfigs.template || `${fullModuleName}.html`;
+    const jsFile = `${fullModuleName}.js`;
     const imported = {
         templateString: isNpm ? requireItNpm(htmlFile) : requireIt(htmlFile)
     };
 
-    if (htmlOnly !== true) {
-        imported.viewModel = isNpm
-            ? requireItNpm(jsFile).default
-            : requireIt(jsFile).default;
+    if (isHtmlOnly !== true) {
+        imported.viewModel = isNpm ? requireItNpm(jsFile).default : requireIt(jsFile).default;
     }
 
     return imported;
