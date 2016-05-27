@@ -166,6 +166,11 @@ function postActivateAsync(self) {
     });
 }
 
+var DEFAULT_SETTINGS = {
+    localBasePath: '.',
+    routerBasePath: './koco/src'
+};
+
 // TODO: Allow overriding page-activator in route config
 // todo: refactoring
 // remove functions that should be private from prototype .. ex. _getRegisteredPage
@@ -176,16 +181,14 @@ var Router = function () {
 
         var self = this;
 
-        self.byroads = new _byroads2.default();
+        self.settings = Object.assign({}, DEFAULT_SETTINGS, settings);
 
-        // __moduleName is part of systemjs
-        // var routerBasePath = __moduleName.replace(/^(?:\/\/|[^\/]+)*\//, '');
-        // var routerBasePath = __fileName.replace(/^(?:\/\/|[^\/]+)*\//, '');
-        // routerBasePath = routerBasePath.substr(0, routerBasePath.lastIndexOf('/'));
+        self.byroads = new _byroads2.default();
 
         _knockout2.default.components.register('router', {
             isHtmlOnly: true,
-            basePath: settings.routerBasePath
+            basePath: self.settings.routerBasePath,
+            isNpm: true
         });
 
         self.context = _knockout2.default.observable(null);
@@ -207,13 +210,7 @@ var Router = function () {
         self.isNavigating = _knockout2.default.observable(false);
         self.isActivating = _knockout2.default.observable(false);
 
-        self.settings = {
-            localBasePath: '.'
-        };
-
         self.routerState = new _routerStatePush2.default(self);
-
-        self.settings = Object.assign({}, self.settings, settings);
 
         // todo: this sucks?
         self.router = document.getElementsByTagName('router')[0];

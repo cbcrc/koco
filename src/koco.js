@@ -1,48 +1,92 @@
 import ko from 'knockout';
 import Router from './router';
-// import {  } from './koco-utils';
 import KocoComponentLoader from './koco-component-loader';
 import KocoComponentLoaderRouterPlugin from './koco-component-loader-router-plugin';
 
-// todo: export function instead of class
-// like redux expose multiple functions that you can pick and choose
-export default class Koco {
+class Koco {
+    constructor(name) {
+        this.isInitialized = false;
+        this._router = null;
+    }
+
+    get router() {
+        if (!this.isInitialized) {
+            throw 'koco is not is not initialized yet.';
+        }
+        
+        return this._router;
+    }
+
     // todo: options
     // ex. unknownRouteHandler, guardRoute, etc.
-    constructor(settings) {
+    init(settings) {
+        if (this.isInitialized) {
+            throw 'koco is already initialized.';
+        }
+
+        this.isInitialized = true;
+
         // todo: private - see http:// stackoverflow.com/a/22160051
-        this.router = new Router(settings);
+        this._router = new Router(settings);
 
         ko.components.loaders.unshift(new KocoComponentLoader({
-            plugins: [new KocoComponentLoaderRouterPlugin(this.router)]
+            plugins: [new KocoComponentLoaderRouterPlugin(this._router)]
         }));
     }
 
     registerPage(name, pageConfig) {
-        this.router.registerPage(name, pageConfig);
+        if (!this.isInitialized) {
+            throw 'koco is not is not initialized yet.';
+        }
+
+        this._router.registerPage(name, pageConfig);
     }
 
     isRegisteredPage(name) {
-        return this.router.isRegisteredPage(name);
+        if (!this.isInitialized) {
+            throw 'koco is not is not initialized yet.';
+        }
+
+        return this._router.isRegisteredPage(name);
     }
 
     addRoute(pattern, routeConfig) {
-        this.router.addRoute(pattern, routeConfig);
+        if (!this.isInitialized) {
+            throw 'koco is not is not initialized yet.';
+        }
+
+        this._router.addRoute(pattern, routeConfig);
     }
 
     setUrlSilently(options) {
-        this.router.setUrlSilently(options);
+        if (!this.isInitialized) {
+            throw 'koco is not is not initialized yet.';
+        }
+
+        this._router.setUrlSilently(options);
     }
 
     navigateAsync(url, options) {
-        return this.router.navigateAsync(url, options);
+        if (!this.isInitialized) {
+            throw 'koco is not is not initialized yet.';
+        }
+
+        return this._router.navigateAsync(url, options);
     }
 
     registerComponent(name, config) {
+        if (!this.isInitialized) {
+            throw 'koco is not is not initialized yet.';
+        }
+
         ko.components.register(name, config || {});
     }
 
     fireAsync() {
+        if (!this.isInitialized) {
+            throw 'koco is not is not initialized yet.';
+        }
+
         // how come I have to do this?
         const self = this;
         // should return context (to be renamed to viewModel since
@@ -54,7 +98,7 @@ export default class Koco {
                 this.navigateAsync('', {
                     replace: true
                 }).then(() => {
-                    resolve({ kocoContext: self.router.context });
+                    resolve({ kocoContext: self._router.context });
                 }).catch((...args) => {
                     reject(args);
                 });
@@ -64,3 +108,5 @@ export default class Koco {
         });
     }
 }
+
+export default new Koco();

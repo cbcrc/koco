@@ -5,8 +5,6 @@ Object.defineProperty(exports, "__esModule", {
 });
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-// import {  } from './koco-utils';
-
 
 var _knockout = require('knockout');
 
@@ -28,58 +26,96 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-// todo: export function instead of class
-// like redux expose multiple functions that you can pick and choose
-
 var Koco = function () {
-    // todo: options
-    // ex. unknownRouteHandler, guardRoute, etc.
-
-    function Koco(settings) {
+    function Koco(name) {
         _classCallCheck(this, Koco);
 
-        // todo: private - see http:// stackoverflow.com/a/22160051
-        this.router = new _router2.default(settings);
-
-        _knockout2.default.components.loaders.unshift(new _kocoComponentLoader2.default({
-            plugins: [new _kocoComponentLoaderRouterPlugin2.default(this.router)]
-        }));
+        this.isInitialized = false;
+        this._router = null;
     }
 
     _createClass(Koco, [{
+        key: 'init',
+
+
+        // todo: options
+        // ex. unknownRouteHandler, guardRoute, etc.
+        value: function init(settings) {
+            if (this.isInitialized) {
+                throw 'koco is already initialized.';
+            }
+
+            this.isInitialized = true;
+
+            // todo: private - see http:// stackoverflow.com/a/22160051
+            this._router = new _router2.default(settings);
+
+            _knockout2.default.components.loaders.unshift(new _kocoComponentLoader2.default({
+                plugins: [new _kocoComponentLoaderRouterPlugin2.default(this._router)]
+            }));
+        }
+    }, {
         key: 'registerPage',
         value: function registerPage(name, pageConfig) {
-            this.router.registerPage(name, pageConfig);
+            if (!this.isInitialized) {
+                throw 'koco is not is not initialized yet.';
+            }
+
+            this._router.registerPage(name, pageConfig);
         }
     }, {
         key: 'isRegisteredPage',
         value: function isRegisteredPage(name) {
-            return this.router.isRegisteredPage(name);
+            if (!this.isInitialized) {
+                throw 'koco is not is not initialized yet.';
+            }
+
+            return this._router.isRegisteredPage(name);
         }
     }, {
         key: 'addRoute',
         value: function addRoute(pattern, routeConfig) {
-            this.router.addRoute(pattern, routeConfig);
+            if (!this.isInitialized) {
+                throw 'koco is not is not initialized yet.';
+            }
+
+            this._router.addRoute(pattern, routeConfig);
         }
     }, {
         key: 'setUrlSilently',
         value: function setUrlSilently(options) {
-            this.router.setUrlSilently(options);
+            if (!this.isInitialized) {
+                throw 'koco is not is not initialized yet.';
+            }
+
+            this._router.setUrlSilently(options);
         }
     }, {
         key: 'navigateAsync',
         value: function navigateAsync(url, options) {
-            return this.router.navigateAsync(url, options);
+            if (!this.isInitialized) {
+                throw 'koco is not is not initialized yet.';
+            }
+
+            return this._router.navigateAsync(url, options);
         }
     }, {
         key: 'registerComponent',
         value: function registerComponent(name, config) {
+            if (!this.isInitialized) {
+                throw 'koco is not is not initialized yet.';
+            }
+
             _knockout2.default.components.register(name, config || {});
         }
     }, {
         key: 'fireAsync',
         value: function fireAsync() {
             var _this = this;
+
+            if (!this.isInitialized) {
+                throw 'koco is not is not initialized yet.';
+            }
 
             // how come I have to do this?
             var self = this;
@@ -92,7 +128,7 @@ var Koco = function () {
                     _this.navigateAsync('', {
                         replace: true
                     }).then(function () {
-                        resolve({ kocoContext: self.router.context });
+                        resolve({ kocoContext: self._router.context });
                     }).catch(function () {
                         for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
                             args[_key] = arguments[_key];
@@ -105,9 +141,18 @@ var Koco = function () {
                 }
             });
         }
+    }, {
+        key: 'router',
+        get: function get() {
+            if (!this.isInitialized) {
+                throw 'koco is not is not initialized yet.';
+            }
+
+            return this._router;
+        }
     }]);
 
     return Koco;
 }();
 
-exports.default = Koco;
+exports.default = new Koco();
