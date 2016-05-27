@@ -27,10 +27,10 @@ class Koco {
         this.isInitialized = true;
 
         // todo: private - see http:// stackoverflow.com/a/22160051
-        this.router = new Router(settings);
+        this._router = new Router(settings);
 
         ko.components.loaders.unshift(new KocoComponentLoader({
-            plugins: [new KocoComponentLoaderRouterPlugin(this.router)]
+            plugins: [new KocoComponentLoaderRouterPlugin(this._router)]
         }));
     }
 
@@ -39,7 +39,7 @@ class Koco {
             throw 'koco is not is not initialized yet.';
         }
 
-        this.router.registerPage(name, pageConfig);
+        this._router.registerPage(name, pageConfig);
     }
 
     isRegisteredPage(name) {
@@ -47,7 +47,7 @@ class Koco {
             throw 'koco is not is not initialized yet.';
         }
 
-        return this.router.isRegisteredPage(name);
+        return this._router.isRegisteredPage(name);
     }
 
     addRoute(pattern, routeConfig) {
@@ -55,7 +55,7 @@ class Koco {
             throw 'koco is not is not initialized yet.';
         }
 
-        this.router.addRoute(pattern, routeConfig);
+        this._router.addRoute(pattern, routeConfig);
     }
 
     setUrlSilently(options) {
@@ -63,7 +63,7 @@ class Koco {
             throw 'koco is not is not initialized yet.';
         }
 
-        this.router.setUrlSilently(options);
+        this._router.setUrlSilently(options);
     }
 
     navigateAsync(url, options) {
@@ -71,7 +71,7 @@ class Koco {
             throw 'koco is not is not initialized yet.';
         }
 
-        return this.router.navigateAsync(url, options);
+        return this._router.navigateAsync(url, options);
     }
 
     registerComponent(name, config) {
@@ -98,7 +98,7 @@ class Koco {
                 this.navigateAsync('', {
                     replace: true
                 }).then(() => {
-                    resolve({ kocoContext: self.router.context });
+                    resolve({ kocoContext: self._router.context });
                 }).catch((...args) => {
                     reject(args);
                 });

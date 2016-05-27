@@ -48,10 +48,10 @@ var Koco = function () {
             this.isInitialized = true;
 
             // todo: private - see http:// stackoverflow.com/a/22160051
-            this.router = new _router2.default(settings);
+            this._router = new _router2.default(settings);
 
             _knockout2.default.components.loaders.unshift(new _kocoComponentLoader2.default({
-                plugins: [new _kocoComponentLoaderRouterPlugin2.default(this.router)]
+                plugins: [new _kocoComponentLoaderRouterPlugin2.default(this._router)]
             }));
         }
     }, {
@@ -61,7 +61,7 @@ var Koco = function () {
                 throw 'koco is not is not initialized yet.';
             }
 
-            this.router.registerPage(name, pageConfig);
+            this._router.registerPage(name, pageConfig);
         }
     }, {
         key: 'isRegisteredPage',
@@ -70,7 +70,7 @@ var Koco = function () {
                 throw 'koco is not is not initialized yet.';
             }
 
-            return this.router.isRegisteredPage(name);
+            return this._router.isRegisteredPage(name);
         }
     }, {
         key: 'addRoute',
@@ -79,7 +79,7 @@ var Koco = function () {
                 throw 'koco is not is not initialized yet.';
             }
 
-            this.router.addRoute(pattern, routeConfig);
+            this._router.addRoute(pattern, routeConfig);
         }
     }, {
         key: 'setUrlSilently',
@@ -88,7 +88,7 @@ var Koco = function () {
                 throw 'koco is not is not initialized yet.';
             }
 
-            this.router.setUrlSilently(options);
+            this._router.setUrlSilently(options);
         }
     }, {
         key: 'navigateAsync',
@@ -97,7 +97,7 @@ var Koco = function () {
                 throw 'koco is not is not initialized yet.';
             }
 
-            return this.router.navigateAsync(url, options);
+            return this._router.navigateAsync(url, options);
         }
     }, {
         key: 'registerComponent',
@@ -128,7 +128,7 @@ var Koco = function () {
                     _this.navigateAsync('', {
                         replace: true
                     }).then(function () {
-                        resolve({ kocoContext: self.router.context });
+                        resolve({ kocoContext: self._router.context });
                     }).catch(function () {
                         for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
                             args[_key] = arguments[_key];
