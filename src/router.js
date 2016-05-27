@@ -145,7 +145,7 @@ function postActivateAsync(self) {
 
 const DEFAULT_SETTINGS = {
     localBasePath: '.',
-    routerBasePath: './koco/src'
+    routerBasePath: 'koco/src'
 };
 
 // TODO: Allow overriding page-activator in route config

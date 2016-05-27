@@ -21,18 +21,18 @@ const DEFAULT_CONFIGS = {
 };
 
 export function importModule(moduleName, configs) {
-    const finalConfigs = Object.assing({}, configs, DEFAULT_CONFIGS);
-    const basePath = finalComponentConfig.basePath ||
-        `${this.options.localBasePath}/${moduleName}`;
+    const finalModuleConfigs = Object.assign({}, DEFAULT_CONFIGS, configs);
+    let basePath = finalModuleConfigs.basePath || moduleName;
     const fullModuleName = `${basePath}/${moduleName}`;
-    const htmlFile = finalConfigs.template || `${fullModuleName}.html`;
-    const jsFile = `${fullModuleName}.js`;
+    let htmlFile = finalModuleConfigs.template || `${fullModuleName}.html`;
+    htmlFile = `./${htmlFile}`;
+    const jsFile = `./${fullModuleName}.js`;
     const imported = {
-        templateString: isNpm ? requireItNpm(htmlFile) : requireIt(htmlFile)
+        templateString: finalModuleConfigs.isNpm ? requireItNpm(htmlFile) : requireIt(htmlFile)
     };
 
-    if (isHtmlOnly !== true) {
-        imported.viewModel = isNpm ? requireItNpm(jsFile).default : requireIt(jsFile).default;
+    if (finalModuleConfigs.isHtmlOnly !== true) {
+        imported.viewModel = finalModuleConfigs.isNpm ? requireItNpm(jsFile).default : requireIt(jsFile).default;
     }
 
     return imported;

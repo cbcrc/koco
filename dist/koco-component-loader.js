@@ -83,10 +83,20 @@
                 if (finalComponentConfig.type === 'component') {
                     (function () {
                         var componentFullName = name + '-component';
-                        var basePath = finalComponentConfig.basePath || _this.options.localBasePath + '/' + componentFullName;
-                        var moduleName = basePath + '/' + componentFullName;
+                        // const basePath = finalComponentConfig.basePath ||
+                        //     `${this.options.localBasePath}/${componentFullName}`;
+                        // const moduleName = `${basePath}/${componentFullName}`;
 
-                        var imported = (0, _kocoUtils.importModule)(moduleName, finalComponentConfig.isHtmlOnly, finalComponentConfig.isNpm);
+                        // const imported = importModule(moduleName,
+                        //     finalComponentConfig.isHtmlOnly,
+                        //     finalComponentConfig.isNpm);
+
+                        var imported = (0, _kocoUtils.importModule)(componentFullName, {
+                            isHtmlOnly: finalComponentConfig.isHtmlOnly,
+                            isNpm: finalComponentConfig.isNpm,
+                            basePath: finalComponentConfig.basePath,
+                            template: finalComponentConfig.template
+                        });
 
                         var result = {
                             template: _knockout2.default.utils.parseHtmlFragment(imported.templateString)

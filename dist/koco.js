@@ -150,7 +150,7 @@
                 // http:// knockoutjs.com/documentation/binding-context.html)
                 return new Promise(function (resolve, reject) {
                     try {
-                        _this.navigateAsync('', {
+                        _this.navigateAsync(_this._router.currentUrl(), {
                             replace: true
                         }).then(function () {
                             resolve({ kocoContext: self._router.context });

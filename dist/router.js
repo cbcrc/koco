@@ -132,9 +132,14 @@
             try {
                 (function () {
                     var registeredPage = context.route.page;
-                    var basePath = registeredPage.basePath || self.settings.localBasePath + '/' + registeredPage.componentName;
-                    var moduleName = basePath + '/' + registeredPage.componentName;
-                    var imported = (0, _kocoUtils.importModule)(moduleName, registeredPage.isHtmlOnly);
+                    // let basePath = registeredPage.basePath || self.settings.localBasePath + '/' + registeredPage.componentName;
+                    // let moduleName = basePath + '/' + registeredPage.componentName;
+                    var imported = (0, _kocoUtils.importModule)(registeredPage.componentName, {
+                        isHtmlOnly: registeredPage.isHtmlOnly,
+                        basePath: registeredPage.basePath,
+                        isNpm: registeredPage.isNpm,
+                        template: registeredPage.template
+                    });
                     var result = {
                         template: _knockout2.default.utils.parseHtmlFragment(imported.templateString)
                     };
@@ -195,7 +200,7 @@
 
     var DEFAULT_SETTINGS = {
         localBasePath: '.',
-        routerBasePath: './koco/src'
+        routerBasePath: 'koco/src'
     };
 
     // TODO: Allow overriding page-activator in route config

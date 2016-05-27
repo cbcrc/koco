@@ -33,15 +33,26 @@
         return functionToCheck && getType.toString.call(functionToCheck) === '[object Function]';
     }
 
-    function importModule(moduleName, htmlOnly, isNpm) {
-        var htmlFile = moduleName + '.html';
-        var jsFile = moduleName + '.js';
+    var DEFAULT_CONFIGS = {
+        isHtmlOnly: false,
+        isNpm: false,
+        basePath: null,
+        template: null
+    };
+
+    function importModule(moduleName, configs) {
+        var finalModuleConfigs = Object.assign({}, DEFAULT_CONFIGS, configs);
+        var basePath = finalModuleConfigs.basePath || moduleName;
+        var fullModuleName = basePath + '/' + moduleName;
+        var htmlFile = finalModuleConfigs.template || fullModuleName + '.html';
+        htmlFile = './' + htmlFile;
+        var jsFile = './' + fullModuleName + '.js';
         var imported = {
-            templateString: isNpm ? requireItNpm(htmlFile) : requireIt(htmlFile)
+            templateString: finalModuleConfigs.isNpm ? requireItNpm(htmlFile) : requireIt(htmlFile)
         };
 
-        if (htmlOnly !== true) {
-            imported.viewModel = isNpm ? requireItNpm(jsFile).default : requireIt(jsFile).default;
+        if (finalModuleConfigs.isHtmlOnly !== true) {
+            imported.viewModel = finalModuleConfigs.isNpm ? requireItNpm(jsFile).default : requireIt(jsFile).default;
         }
 
         return imported;
