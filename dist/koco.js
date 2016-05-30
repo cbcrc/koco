@@ -61,7 +61,7 @@
 
             this.isInitialized = false;
             this._router = null;
-            this.context = _knockout2.default.pureComputed({
+            this.viewModel = _knockout2.default.pureComputed({
                 read: function read() {
                     if (!this.isInitialized) {
                         return null;
@@ -98,10 +98,6 @@
         }, {
             key: 'registerComponent',
             value: function registerComponent(name, config) {
-                if (!this.isInitialized) {
-                    throw 'koco is not is not initialized yet.';
-                }
-
                 _knockout2.default.components.register(name, config || {});
             }
         }, {
@@ -111,28 +107,8 @@
                     throw 'koco is not is not initialized yet.';
                 }
 
-                // how come I have to do this?
-                var self = this;
-                // should return context (to be renamed to viewModel since
-                // the root level of the hierarchy refers to the viewModel
-                // parameter you supplied to ko.applyBindings(viewModel)
-                // http:// knockoutjs.com/documentation/binding-context.html)
-                return new Promise(function (resolve, reject) {
-                    try {
-                        self._router.navigateAsync(self._router.currentUrl(), {
-                            replace: true
-                        }).then(function () {
-                            resolve({ kocoContext: self._router.context });
-                        }).catch(function () {
-                            for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-                                args[_key] = arguments[_key];
-                            }
-
-                            reject(args);
-                        });
-                    } catch (err) {
-                        reject(err);
-                    }
+                return this._router.navigateAsync(this._router.currentUrl(), {
+                    replace: true
                 });
             }
         }, {

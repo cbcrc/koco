@@ -7,7 +7,7 @@ class Koco {
     constructor() {
         this.isInitialized = false;
         this._router = null;
-        this.context = ko.pureComputed({
+        this.viewModel = ko.pureComputed({
             read: function() {
                 if (!this.isInitialized) {
                     return null;
@@ -51,10 +51,6 @@ class Koco {
     }
 
     registerComponent(name, config) {
-        if (!this.isInitialized) {
-            throw 'koco is not is not initialized yet.';
-        }
-
         ko.components.register(name, config || {});
     }
 
@@ -63,24 +59,8 @@ class Koco {
             throw 'koco is not is not initialized yet.';
         }
 
-        // how come I have to do this?
-        const self = this;
-        // should return context (to be renamed to viewModel since
-        // the root level of the hierarchy refers to the viewModel
-        // parameter you supplied to ko.applyBindings(viewModel)
-        // http:// knockoutjs.com/documentation/binding-context.html)
-        return new Promise((resolve, reject) => {
-            try {
-                self._router.navigateAsync(self._router.currentUrl(), {
-                    replace: true
-                }).then(() => {
-                    resolve({ kocoContext: self._router.context });
-                }).catch((...args) => {
-                    reject(args);
-                });
-            } catch (err) {
-                reject(err);
-            }
+        return this._router.navigateAsync(this._router.currentUrl(), {
+            replace: true
         });
     }
 }
