@@ -96,6 +96,15 @@
                 }));
             }
         }, {
+            key: 'registerComponent',
+            value: function registerComponent(name, config) {
+                if (!this.isInitialized) {
+                    throw 'koco is not is not initialized yet.';
+                }
+
+                _knockout2.default.components.register(name, config || {});
+            }
+        }, {
             key: 'fireAsync',
             value: function fireAsync() {
                 var _this = this;

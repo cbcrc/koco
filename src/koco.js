@@ -50,6 +50,14 @@ class Koco {
         }));
     }
 
+    registerComponent(name, config) {
+        if (!this.isInitialized) {
+            throw 'koco is not is not initialized yet.';
+        }
+
+        ko.components.register(name, config || {});
+    }
+
     fireAsync() {
         if (!this.isInitialized) {
             throw 'koco is not is not initialized yet.';
