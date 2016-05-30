@@ -107,8 +107,6 @@
         }, {
             key: 'fireAsync',
             value: function fireAsync() {
-                var _this = this;
-
                 if (!this.isInitialized) {
                     throw 'koco is not is not initialized yet.';
                 }
@@ -121,7 +119,7 @@
                 // http:// knockoutjs.com/documentation/binding-context.html)
                 return new Promise(function (resolve, reject) {
                     try {
-                        _this.navigateAsync(_this._router.currentUrl(), {
+                        self._router.navigateAsync(self._router.currentUrl(), {
                             replace: true
                         }).then(function () {
                             resolve({ kocoContext: self._router.context });
