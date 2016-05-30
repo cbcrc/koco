@@ -143,61 +143,6 @@ function postActivateAsync(self) {
     });
 }
 
-function navigateInner(self, newUrl, options, context) {
-    const defaultOptions = {
-        force: false
-    };
-
-    const filnalOptions = Object.assign(defaultOptions, options || {});
-
-    if (!context) {
-        context = new Context();
-    }
-
-    if (self.byroads.getNumRoutes() === 0) {
-        self._internalNavigatingTask.reject('No route has been added to the router yet.');
-        return;
-    }
-
-    const matchedRoute = updateRoute(self, newUrl, context);
-    let guardRouteResult = true;
-
-    if (!filnalOptions.force) {
-        guardRouteResult = self.guardRoute(matchedRoute, newUrl);
-    }
-
-    if (guardRouteResult === false) {
-        self._internalNavigatingTask.reject('guardRoute has blocked navigation.');
-        return;
-    } else if (guardRouteResult === true) {
-        // continue
-    } else if (typeof guardRouteResult === 'string' || guardRouteResult instanceof String) {
-        navigateInner(self, guardRouteResult, filnalOptions, context);
-        return;
-    } else {
-        self._internalNavigatingTask.reject('guardRoute has returned an invalid value. Only string or boolean are supported.');
-        return;
-    }
-
-    if (matchedRoute) {
-        var previousContext = self.cachedPages[newUrl];
-
-        if (previousContext) {
-            self._internalNavigatingTask.resolve(previousContext);
-        } else {
-            activateAsync(self, context)
-                .then(function(context) {
-                    self._internalNavigatingTask.resolve(context);
-                })
-                .catch(function() {
-                    self._internalNavigatingTask.reject.apply(self, arguments);
-                });
-        }
-    } else {
-        self._internalNavigatingTask.reject('404');
-    }
-}
-
 const DEFAULT_SETTINGS = {
     localBasePath: '.',
     routerBasePath: 'koco/src'
@@ -352,6 +297,64 @@ class Router {
         return true;
     }
 
+    // should not be exposed but it is for dialoger...
+    _navigateInner(newUrl, options, context) {
+        var self = this;
+
+        const defaultOptions = {
+            force: false
+        };
+
+        const filnalOptions = Object.assign(defaultOptions, options || {});
+
+        if (!context) {
+            context = new Context();
+        }
+
+        if (self.byroads.getNumRoutes() === 0) {
+            self._internalNavigatingTask.reject('No route has been added to the router yet.');
+            return;
+        }
+
+        const matchedRoute = updateRoute(self, newUrl, context);
+        let guardRouteResult = true;
+
+        if (!filnalOptions.force) {
+            guardRouteResult = self.guardRoute(matchedRoute, newUrl);
+        }
+
+        if (guardRouteResult === false) {
+            self._internalNavigatingTask.reject('guardRoute has blocked navigation.');
+            return;
+        } else if (guardRouteResult === true) {
+            // continue
+        } else if (typeof guardRouteResult === 'string' || guardRouteResult instanceof String) {
+            self._navigateInner(guardRouteResult, filnalOptions, context);
+            return;
+        } else {
+            self._internalNavigatingTask.reject('guardRoute has returned an invalid value. Only string or boolean are supported.');
+            return;
+        }
+
+        if (matchedRoute) {
+            var previousContext = self.cachedPages[newUrl];
+
+            if (previousContext) {
+                self._internalNavigatingTask.resolve(previousContext);
+            } else {
+                activateAsync(self, context)
+                    .then(function(context) {
+                        self._internalNavigatingTask.resolve(context);
+                    })
+                    .catch(function() {
+                        self._internalNavigatingTask.reject.apply(self, arguments);
+                    });
+            }
+        } else {
+            self._internalNavigatingTask.reject('404');
+        }
+    }
+
     // Cette méthode peut être overriden au besoin par le end user
     getPrioritizedRoute(matchedRoutes /*, newUrl*/ ) {
         // var self = this;
@@ -463,12 +466,12 @@ class Router {
 
             if (options.force) {
                 self.isNavigating(true);
-                navigateInner(self, url, options);
+                self._navigateInner(url, options);
             } else {
                 self.navigating.canRoute(options).then(function(can) {
                     if (can) {
                         self.isNavigating(true);
-                        navigateInner(self, url, options);
+                        self._navigateInner(url, options);
                     } else {
                         self._internalNavigatingTask.reject('routing cancelled by router.navigating.canRoute');
                     }

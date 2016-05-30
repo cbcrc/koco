@@ -198,59 +198,6 @@
         });
     }
 
-    function navigateInner(self, newUrl, options, context) {
-        var defaultOptions = {
-            force: false
-        };
-
-        var filnalOptions = Object.assign(defaultOptions, options || {});
-
-        if (!context) {
-            context = new _context2.default();
-        }
-
-        if (self.byroads.getNumRoutes() === 0) {
-            self._internalNavigatingTask.reject('No route has been added to the router yet.');
-            return;
-        }
-
-        var matchedRoute = updateRoute(self, newUrl, context);
-        var guardRouteResult = true;
-
-        if (!filnalOptions.force) {
-            guardRouteResult = self.guardRoute(matchedRoute, newUrl);
-        }
-
-        if (guardRouteResult === false) {
-            self._internalNavigatingTask.reject('guardRoute has blocked navigation.');
-            return;
-        } else if (guardRouteResult === true) {
-            // continue
-        } else if (typeof guardRouteResult === 'string' || guardRouteResult instanceof String) {
-                navigateInner(self, guardRouteResult, filnalOptions, context);
-                return;
-            } else {
-                self._internalNavigatingTask.reject('guardRoute has returned an invalid value. Only string or boolean are supported.');
-                return;
-            }
-
-        if (matchedRoute) {
-            var previousContext = self.cachedPages[newUrl];
-
-            if (previousContext) {
-                self._internalNavigatingTask.resolve(previousContext);
-            } else {
-                activateAsync(self, context).then(function (context) {
-                    self._internalNavigatingTask.resolve(context);
-                }).catch(function () {
-                    self._internalNavigatingTask.reject.apply(self, arguments);
-                });
-            }
-        } else {
-            self._internalNavigatingTask.reject('404');
-        }
-    }
-
     var DEFAULT_SETTINGS = {
         localBasePath: '.',
         routerBasePath: 'koco/src'
@@ -409,6 +356,62 @@
                 return true;
             }
         }, {
+            key: '_navigateInner',
+            value: function _navigateInner(newUrl, options, context) {
+                var self = this;
+
+                var defaultOptions = {
+                    force: false
+                };
+
+                var filnalOptions = Object.assign(defaultOptions, options || {});
+
+                if (!context) {
+                    context = new _context2.default();
+                }
+
+                if (self.byroads.getNumRoutes() === 0) {
+                    self._internalNavigatingTask.reject('No route has been added to the router yet.');
+                    return;
+                }
+
+                var matchedRoute = updateRoute(self, newUrl, context);
+                var guardRouteResult = true;
+
+                if (!filnalOptions.force) {
+                    guardRouteResult = self.guardRoute(matchedRoute, newUrl);
+                }
+
+                if (guardRouteResult === false) {
+                    self._internalNavigatingTask.reject('guardRoute has blocked navigation.');
+                    return;
+                } else if (guardRouteResult === true) {
+                    // continue
+                } else if (typeof guardRouteResult === 'string' || guardRouteResult instanceof String) {
+                        self._navigateInner(guardRouteResult, filnalOptions, context);
+                        return;
+                    } else {
+                        self._internalNavigatingTask.reject('guardRoute has returned an invalid value. Only string or boolean are supported.');
+                        return;
+                    }
+
+                if (matchedRoute) {
+                    var previousContext = self.cachedPages[newUrl];
+
+                    if (previousContext) {
+                        self._internalNavigatingTask.resolve(previousContext);
+                    } else {
+                        activateAsync(self, context).then(function (context) {
+                            self._internalNavigatingTask.resolve(context);
+                        }).catch(function () {
+                            self._internalNavigatingTask.reject.apply(self, arguments);
+                        });
+                    }
+                } else {
+                    self._internalNavigatingTask.reject('404');
+                }
+            }
+        }, {
             key: 'getPrioritizedRoute',
             value: function getPrioritizedRoute(matchedRoutes /*, newUrl*/) {
                 // var self = this;
@@ -518,12 +521,12 @@
 
                     if (options.force) {
                         self.isNavigating(true);
-                        navigateInner(self, url, options);
+                        self._navigateInner(url, options);
                     } else {
                         self.navigating.canRoute(options).then(function (can) {
                             if (can) {
                                 self.isNavigating(true);
-                                navigateInner(self, url, options);
+                                self._navigateInner(url, options);
                             } else {
                                 self._internalNavigatingTask.reject('routing cancelled by router.navigating.canRoute');
                             }

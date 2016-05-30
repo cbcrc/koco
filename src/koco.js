@@ -4,9 +4,25 @@ import KocoComponentLoader from './koco-component-loader';
 import KocoComponentLoaderRouterPlugin from './koco-component-loader-router-plugin';
 
 class Koco {
-    constructor(name) {
+    constructor() {
         this.isInitialized = false;
         this._router = null;
+        this.context = ko.pureComputed({
+            read: function() {
+                if (!this.isInitialized) {
+                    return null;
+                }
+
+                return this._router.context();
+            },
+            write: function(value) {
+                if (!this.isInitialized) {
+                    throw 'koco is not is not initialized yet.';
+                }
+                return this._router.context(value);
+            },
+            owner: this
+        });
     }
 
     get router() {
@@ -32,54 +48,6 @@ class Koco {
         ko.components.loaders.unshift(new KocoComponentLoader({
             plugins: [new KocoComponentLoaderRouterPlugin(this._router)]
         }));
-    }
-
-    registerPage(name, pageConfig) {
-        if (!this.isInitialized) {
-            throw 'koco is not is not initialized yet.';
-        }
-
-        this._router.registerPage(name, pageConfig);
-    }
-
-    isRegisteredPage(name) {
-        if (!this.isInitialized) {
-            throw 'koco is not is not initialized yet.';
-        }
-
-        return this._router.isRegisteredPage(name);
-    }
-
-    addRoute(pattern, routeConfig) {
-        if (!this.isInitialized) {
-            throw 'koco is not is not initialized yet.';
-        }
-
-        this._router.addRoute(pattern, routeConfig);
-    }
-
-    setUrlSilently(options) {
-        if (!this.isInitialized) {
-            throw 'koco is not is not initialized yet.';
-        }
-
-        this._router.setUrlSilently(options);
-    }
-
-    navigateAsync(url, options) {
-        if (!this.isInitialized) {
-            throw 'koco is not is not initialized yet.';
-        }
-
-        return this._router.navigateAsync(url, options);
-    }
-
-    registerComponent(name, config) {
-        if (!this.isInitialized) {
-            throw 'koco is not is not initialized yet.';
-        }
-
-        ko.components.register(name, config || {});
     }
 
     fireAsync() {

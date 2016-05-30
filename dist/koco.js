@@ -56,11 +56,27 @@
     }();
 
     var Koco = function () {
-        function Koco(name) {
+        function Koco() {
             _classCallCheck(this, Koco);
 
             this.isInitialized = false;
             this._router = null;
+            this.context = _knockout2.default.pureComputed({
+                read: function read() {
+                    if (!this.isInitialized) {
+                        return null;
+                    }
+
+                    return this._router.context();
+                },
+                write: function write(value) {
+                    if (!this.isInitialized) {
+                        throw 'koco is not is not initialized yet.';
+                    }
+                    return this._router.context(value);
+                },
+                owner: this
+            });
         }
 
         _createClass(Koco, [{
@@ -78,60 +94,6 @@
                 _knockout2.default.components.loaders.unshift(new _kocoComponentLoader2.default({
                     plugins: [new _kocoComponentLoaderRouterPlugin2.default(this._router)]
                 }));
-            }
-        }, {
-            key: 'registerPage',
-            value: function registerPage(name, pageConfig) {
-                if (!this.isInitialized) {
-                    throw 'koco is not is not initialized yet.';
-                }
-
-                this._router.registerPage(name, pageConfig);
-            }
-        }, {
-            key: 'isRegisteredPage',
-            value: function isRegisteredPage(name) {
-                if (!this.isInitialized) {
-                    throw 'koco is not is not initialized yet.';
-                }
-
-                return this._router.isRegisteredPage(name);
-            }
-        }, {
-            key: 'addRoute',
-            value: function addRoute(pattern, routeConfig) {
-                if (!this.isInitialized) {
-                    throw 'koco is not is not initialized yet.';
-                }
-
-                this._router.addRoute(pattern, routeConfig);
-            }
-        }, {
-            key: 'setUrlSilently',
-            value: function setUrlSilently(options) {
-                if (!this.isInitialized) {
-                    throw 'koco is not is not initialized yet.';
-                }
-
-                this._router.setUrlSilently(options);
-            }
-        }, {
-            key: 'navigateAsync',
-            value: function navigateAsync(url, options) {
-                if (!this.isInitialized) {
-                    throw 'koco is not is not initialized yet.';
-                }
-
-                return this._router.navigateAsync(url, options);
-            }
-        }, {
-            key: 'registerComponent',
-            value: function registerComponent(name, config) {
-                if (!this.isInitialized) {
-                    throw 'koco is not is not initialized yet.';
-                }
-
-                _knockout2.default.components.register(name, config || {});
             }
         }, {
             key: 'fireAsync',
