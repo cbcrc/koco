@@ -13,7 +13,7 @@ class Koco {
         if (!this.isInitialized) {
             throw 'koco is not is not initialized yet.';
         }
-        
+
         return this._router;
     }
 

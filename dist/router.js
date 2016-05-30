@@ -72,7 +72,7 @@
 
         for (var i = 0; i < matchedRoutes.length; i++) {
             var matchedRoute = matchedRoutes[i];
-            var page = self._getRegisteredPage(matchedRoute.route.pageName);
+            var page = self.getRegisteredPage(matchedRoute.route.pageName);
             var route = new _route2.default(url, matchedRoute, page);
             result.push(route);
         }
@@ -198,6 +198,59 @@
         });
     }
 
+    function navigateInner(self, newUrl, options, context) {
+        var defaultOptions = {
+            force: false
+        };
+
+        var filnalOptions = Object.assign(defaultOptions, options || {});
+
+        if (!context) {
+            context = new _context2.default();
+        }
+
+        if (self.byroads.getNumRoutes() === 0) {
+            self._internalNavigatingTask.reject('No route has been added to the router yet.');
+            return;
+        }
+
+        var matchedRoute = updateRoute(self, newUrl, context);
+        var guardRouteResult = true;
+
+        if (!filnalOptions.force) {
+            guardRouteResult = self.guardRoute(matchedRoute, newUrl);
+        }
+
+        if (guardRouteResult === false) {
+            self._internalNavigatingTask.reject('guardRoute has blocked navigation.');
+            return;
+        } else if (guardRouteResult === true) {
+            // continue
+        } else if (typeof guardRouteResult === 'string' || guardRouteResult instanceof String) {
+                navigateInner(self, guardRouteResult, filnalOptions, context);
+                return;
+            } else {
+                self._internalNavigatingTask.reject('guardRoute has returned an invalid value. Only string or boolean are supported.');
+                return;
+            }
+
+        if (matchedRoute) {
+            var previousContext = self.cachedPages[newUrl];
+
+            if (previousContext) {
+                self._internalNavigatingTask.resolve(previousContext);
+            } else {
+                activateAsync(self, context).then(function (context) {
+                    self._internalNavigatingTask.resolve(context);
+                }).catch(function () {
+                    self._internalNavigatingTask.reject.apply(self, arguments);
+                });
+            }
+        } else {
+            self._internalNavigatingTask.reject('404');
+        }
+    }
+
     var DEFAULT_SETTINGS = {
         localBasePath: '.',
         routerBasePath: 'koco/src'
@@ -205,7 +258,7 @@
 
     // TODO: Allow overriding page-activator in route config
     // todo: refactoring
-    // remove functions that should be private from prototype .. ex. _getRegisteredPage
+    // remove functions that should be private from prototype .. ex. getRegisteredPage
 
     var Router = function () {
         function Router(settings) {
@@ -282,8 +335,8 @@
                 return name in this._pages;
             }
         }, {
-            key: '_getRegisteredPage',
-            value: function _getRegisteredPage(name) {
+            key: 'getRegisteredPage',
+            value: function getRegisteredPage(name) {
                 return this._pages[name];
             }
         }, {
@@ -465,12 +518,12 @@
 
                     if (options.force) {
                         self.isNavigating(true);
-                        self._navigateInner(url, options);
+                        navigateInner(self, url, options);
                     } else {
                         self.navigating.canRoute(options).then(function (can) {
                             if (can) {
                                 self.isNavigating(true);
-                                self._navigateInner(url, options);
+                                navigateInner(self, url, options);
                             } else {
                                 self._internalNavigatingTask.reject('routing cancelled by router.navigating.canRoute');
                             }
@@ -483,62 +536,6 @@
                 // TODO: S'assurer que canRoute() === false, remet l'url précédente sur back/forward button
 
                 return self._navigatingTask.promise;
-            }
-        }, {
-            key: '_navigateInner',
-            value: function _navigateInner(newUrl, options, context) {
-                var self = this;
-
-                var defaultOptions = {
-                    force: false
-                };
-
-                options = Object.assign(defaultOptions, options || {});
-
-                if (!context) {
-                    context = new _context2.default();
-                }
-
-                if (self.byroads.getNumRoutes() === 0) {
-                    self._internalNavigatingTask.reject('No route has been added to the router yet.');
-                    return;
-                }
-
-                var matchedRoute = updateRoute(self, newUrl, context);
-                var guardRouteResult = true;
-
-                if (!options.force) {
-                    guardRouteResult = self.guardRoute(matchedRoute, newUrl);
-                }
-
-                if (guardRouteResult === false) {
-                    self._internalNavigatingTask.reject('guardRoute has blocked navigation.');
-                    return;
-                } else if (guardRouteResult === true) {
-                    // continue
-                } else if (typeof guardRouteResult === 'string' || guardRouteResult instanceof String) {
-                        self._navigateInner(guardRouteResult, options, context);
-                        return;
-                    } else {
-                        self._internalNavigatingTask.reject('guardRoute has returned an invalid value. Only string or boolean are supported.');
-                        return;
-                    }
-
-                if (matchedRoute) {
-                    var previousContext = self.cachedPages[newUrl];
-
-                    if (previousContext) {
-                        self._internalNavigatingTask.resolve(previousContext);
-                    } else {
-                        activateAsync(self, context).then(function (context) {
-                            self._internalNavigatingTask.resolve(context);
-                        }).catch(function () {
-                            self._internalNavigatingTask.reject.apply(self, arguments);
-                        });
-                    }
-                } else {
-                    self._internalNavigatingTask.reject('404');
-                }
             }
         }, {
             key: 'currentUrl',
