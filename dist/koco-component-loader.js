@@ -75,14 +75,14 @@
 
                 var finalComponentConfig = Object.assign({}, DEFAULT_COMPONENT_CONFIG, componentConfig);
 
-                // todo: isBower, isNpm --else it is local
+                // todo: isNpm, isNpm --else it is local
                 // basePath = 'bower_components/koco-' + name + '/src';
                 // todo: basePath override on componentConfig
                 // componentConfig.basePath
 
                 if (finalComponentConfig.type === 'component') {
                     (function () {
-                        var componentFullName = name + '-component';
+                        //const componentFullName = `${name}-component`;
                         // const basePath = finalComponentConfig.basePath ||
                         //     `${this.options.localBasePath}/${componentFullName}`;
                         // const moduleName = `${basePath}/${componentFullName}`;
@@ -91,7 +91,7 @@
                         //     finalComponentConfig.isHtmlOnly,
                         //     finalComponentConfig.isNpm);
 
-                        var imported = (0, _kocoUtils.importModule)(componentFullName, {
+                        var imported = (0, _kocoUtils.importModule)(name, {
                             isHtmlOnly: finalComponentConfig.isHtmlOnly,
                             isNpm: finalComponentConfig.isNpm,
                             basePath: finalComponentConfig.basePath,

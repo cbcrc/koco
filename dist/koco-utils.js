@@ -46,7 +46,7 @@
         var fullModuleName = basePath + '/' + moduleName;
         var htmlFile = finalModuleConfigs.template || fullModuleName + '.html';
         htmlFile = './' + htmlFile;
-        var jsFile = './' + fullModuleName + '.js';
+        var jsFile = './' + fullModuleName + '-ui.js';
         var imported = {
             templateString: finalModuleConfigs.isNpm ? requireItNpm(htmlFile) : requireIt(htmlFile)
         };

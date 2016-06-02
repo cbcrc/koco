@@ -26,7 +26,7 @@ export function importModule(moduleName, configs) {
     const fullModuleName = `${basePath}/${moduleName}`;
     let htmlFile = finalModuleConfigs.template || `${fullModuleName}.html`;
     htmlFile = `./${htmlFile}`;
-    const jsFile = `./${fullModuleName}.js`;
+    const jsFile = `./${fullModuleName}-ui.js`;
     const imported = {
         templateString: finalModuleConfigs.isNpm ? requireItNpm(htmlFile) : requireIt(htmlFile)
     };

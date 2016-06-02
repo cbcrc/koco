@@ -20,13 +20,13 @@ export default class KocoComponentLoader {
     loadComponent(name, componentConfig, callback) {
         const finalComponentConfig = Object.assign({}, DEFAULT_COMPONENT_CONFIG, componentConfig);
 
-        // todo: isBower, isNpm --else it is local
+        // todo: isNpm, isNpm --else it is local
         // basePath = 'bower_components/koco-' + name + '/src';
         // todo: basePath override on componentConfig
         // componentConfig.basePath
 
         if (finalComponentConfig.type === 'component') {
-            const componentFullName = `${name}-component`;
+            //const componentFullName = `${name}-component`;
             // const basePath = finalComponentConfig.basePath ||
             //     `${this.options.localBasePath}/${componentFullName}`;
             // const moduleName = `${basePath}/${componentFullName}`;
@@ -35,7 +35,7 @@ export default class KocoComponentLoader {
             //     finalComponentConfig.isHtmlOnly,
             //     finalComponentConfig.isNpm);
 
-            const imported = importModule(componentFullName, {
+            const imported = importModule(name, {
                 isHtmlOnly: finalComponentConfig.isHtmlOnly,
                 isNpm: finalComponentConfig.isNpm,
                 basePath: finalComponentConfig.basePath,
