@@ -22,7 +22,7 @@ const DEFAULT_CONFIGS = {
 
 export function importModule(moduleName, configs) {
     const finalModuleConfigs = Object.assign({}, DEFAULT_CONFIGS, configs);
-    let basePath = finalModuleConfigs.basePath || moduleName;
+    let basePath = finalModuleConfigs.basePath || (finalModuleConfigs.isNpm ? `koco-${moduleName}/src` : moduleName);
     const fullModuleName = `${basePath}/${moduleName}`;
     let htmlFile = finalModuleConfigs.template || `${fullModuleName}.html`;
     htmlFile = `./${htmlFile}`;

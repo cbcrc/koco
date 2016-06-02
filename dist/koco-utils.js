@@ -42,7 +42,7 @@
 
     function importModule(moduleName, configs) {
         var finalModuleConfigs = Object.assign({}, DEFAULT_CONFIGS, configs);
-        var basePath = finalModuleConfigs.basePath || moduleName;
+        var basePath = finalModuleConfigs.basePath || (finalModuleConfigs.isNpm ? 'koco-' + moduleName + '/src' : moduleName);
         var fullModuleName = basePath + '/' + moduleName;
         var htmlFile = finalModuleConfigs.template || fullModuleName + '.html';
         htmlFile = './' + htmlFile;
