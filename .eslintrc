@@ -7,7 +7,6 @@
   "plugins": [
   ],
   "rules": {
-    "indent": ["error", 4],
     "comma-dangle": 0,
     "max-len": [2, 100, 2, {
       "ignoreUrls": true,
