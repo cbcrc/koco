@@ -46,7 +46,7 @@ export default class KocoComponentLoader {
                 template: ko.utils.parseHtmlFragment(imported.templateString)
             };
 
-            if (finalComponentConfig.htmlOnly !== true) {
+            if (finalComponentConfig.isHtmlOnly !== true) {
                 result.createViewModel = (params, componentInfo) => {
                     if (isFunction(imported.viewModel)) {
                         const ViewModel = imported.viewModel;

@@ -102,7 +102,7 @@
                             template: _knockout2.default.utils.parseHtmlFragment(imported.templateString)
                         };
 
-                        if (finalComponentConfig.htmlOnly !== true) {
+                        if (finalComponentConfig.isHtmlOnly !== true) {
                             result.createViewModel = function (params, componentInfo) {
                                 if ((0, _kocoUtils.isFunction)(imported.viewModel)) {
                                     var ViewModel = imported.viewModel;

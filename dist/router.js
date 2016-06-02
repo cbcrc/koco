@@ -144,7 +144,7 @@
             template: _knockout2.default.utils.parseHtmlFragment(imported.templateString)
           };
 
-          if (registeredPage.htmlOnly === true) {
+          if (registeredPage.isHtmlOnly === true) {
             context.page = result;
             resolve(context);
           } else {
