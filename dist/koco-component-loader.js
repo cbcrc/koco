@@ -71,8 +71,6 @@
         _createClass(KocoComponentLoader, [{
             key: 'loadComponent',
             value: function loadComponent(name, componentConfig, callback) {
-                var _this = this;
-
                 var finalComponentConfig = Object.assign({}, DEFAULT_COMPONENT_CONFIG, componentConfig);
 
                 // todo: isNpm, isNpm --else it is local
@@ -80,58 +78,54 @@
                 // todo: basePath override on componentConfig
                 // componentConfig.basePath
 
-                if (finalComponentConfig.type === 'component') {
-                    (function () {
-                        //const componentFullName = `${name}-component`;
-                        // const basePath = finalComponentConfig.basePath ||
-                        //     `${this.options.localBasePath}/${componentFullName}`;
-                        // const moduleName = `${basePath}/${componentFullName}`;
+                // if (finalComponentConfig.type === 'component') {
+                // const componentFullName = `${name}-component`;
+                // const basePath = finalComponentConfig.basePath ||
+                //     `${this.options.localBasePath}/${componentFullName}`;
+                // const moduleName = `${basePath}/${componentFullName}`;
 
-                        // const imported = importModule(moduleName,
-                        //     finalComponentConfig.isHtmlOnly,
-                        //     finalComponentConfig.isNpm);
+                // const imported = importModule(moduleName,
+                //     finalComponentConfig.isHtmlOnly,
+                //     finalComponentConfig.isNpm);
 
-                        var imported = (0, _kocoUtils.importModule)(name, {
-                            isHtmlOnly: finalComponentConfig.isHtmlOnly,
-                            isNpm: finalComponentConfig.isNpm,
-                            basePath: finalComponentConfig.basePath,
-                            template: finalComponentConfig.template
-                        });
+                var imported = (0, _kocoUtils.importModule)(name, {
+                    isHtmlOnly: finalComponentConfig.isHtmlOnly,
+                    isNpm: finalComponentConfig.isNpm,
+                    basePath: finalComponentConfig.basePath,
+                    template: finalComponentConfig.template
+                });
 
-                        var result = {
-                            template: _knockout2.default.utils.parseHtmlFragment(imported.templateString)
-                        };
+                var result = {
+                    template: _knockout2.default.utils.parseHtmlFragment(imported.templateString)
+                };
 
-                        if (finalComponentConfig.isHtmlOnly !== true) {
-                            result.createViewModel = function (params, componentInfo) {
-                                if ((0, _kocoUtils.isFunction)(imported.viewModel)) {
-                                    var ViewModel = imported.viewModel;
-                                    return new ViewModel(params, componentInfo);
-                                }
-
-                                return imported.viewModel;
-                            };
+                if (finalComponentConfig.isHtmlOnly !== true) {
+                    result.createViewModel = function (params, componentInfo) {
+                        if ((0, _kocoUtils.isFunction)(imported.viewModel)) {
+                            var ViewModel = imported.viewModel;
+                            return new ViewModel(params, componentInfo);
                         }
 
-                        callback(result);
-                    })();
-                } else {
-                    (function () {
-                        var component = void 0;
-
-                        // http://stackoverflow.com/a/6260865
-                        _this.options.plugins.some(function (plugin) {
-                            component = plugin.loadComponent(name, finalComponentConfig);
-                            return !!component;
-                        });
-
-                        if (component) {
-                            callback(component);
-                        } else {
-                            throw new Error('Unsupported component type: ' + finalComponentConfig.type);
-                        }
-                    })();
+                        return imported.viewModel;
+                    };
                 }
+
+                callback(result);
+                // } else {
+                //     let component;
+
+                //     // http://stackoverflow.com/a/6260865
+                //     this.options.plugins.some(plugin => {
+                //         component = plugin.loadComponent(name, finalComponentConfig);
+                //         return !!component;
+                //     });
+
+                //     if (component) {
+                //         callback(component);
+                //     } else {
+                //         throw new Error(`Unsupported component type: ${finalComponentConfig.type}`);
+                //     }
+                // }
             }
         }]);
 

@@ -59,7 +59,7 @@
                 resolve(false);
             }
 
-            Promise.all(handlerResult).then(function (result) {
+            Promise.all([handlerResult]).then(function (result) {
                 if (!result) {
                     resolve(false);
                 }

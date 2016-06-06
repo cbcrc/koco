@@ -16,7 +16,7 @@ function checkSubscriber(subscribers, options, index) {
             resolve(false);
         }
 
-        Promise.all(handlerResult).then(result => {
+        Promise.all([handlerResult]).then(result => {
             if (!result) {
                 resolve(false);
             }

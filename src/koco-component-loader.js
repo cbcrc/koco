@@ -25,8 +25,8 @@ export default class KocoComponentLoader {
         // todo: basePath override on componentConfig
         // componentConfig.basePath
 
-        if (finalComponentConfig.type === 'component') {
-            //const componentFullName = `${name}-component`;
+        // if (finalComponentConfig.type === 'component') {
+            // const componentFullName = `${name}-component`;
             // const basePath = finalComponentConfig.basePath ||
             //     `${this.options.localBasePath}/${componentFullName}`;
             // const moduleName = `${basePath}/${componentFullName}`;
@@ -58,21 +58,21 @@ export default class KocoComponentLoader {
             }
 
             callback(result);
-        } else {
-            let component;
+        // } else {
+        //     let component;
 
-            // http://stackoverflow.com/a/6260865
-            this.options.plugins.some(plugin => {
-                component = plugin.loadComponent(name, finalComponentConfig);
-                return !!component;
-            });
+        //     // http://stackoverflow.com/a/6260865
+        //     this.options.plugins.some(plugin => {
+        //         component = plugin.loadComponent(name, finalComponentConfig);
+        //         return !!component;
+        //     });
 
-            if (component) {
-                callback(component);
-            } else {
-                throw new Error(`Unsupported component type: ${finalComponentConfig.type}`);
-            }
-        }
+        //     if (component) {
+        //         callback(component);
+        //     } else {
+        //         throw new Error(`Unsupported component type: ${finalComponentConfig.type}`);
+        //     }
+        // }
     }
 
     // first
