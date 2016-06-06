@@ -1,8 +1,8 @@
-function requireIt(moduleName) {
+export function requireIt(moduleName) {
     return require.context('../../../modules/', true, /.*\.(js|html)$/)(moduleName);
 }
 
-function requireItNpm(moduleName) {
+export function requireItNpm(moduleName) {
     return require.context('../../', true, /koco.*\/src\/.*\.(js|html)$/)(moduleName);
 }
 

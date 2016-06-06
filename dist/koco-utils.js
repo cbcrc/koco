@@ -16,6 +16,8 @@
     Object.defineProperty(exports, "__esModule", {
         value: true
     });
+    exports.requireIt = requireIt;
+    exports.requireItNpm = requireItNpm;
     exports.isFunction = isFunction;
     exports.importModule = importModule;
     function requireIt(moduleName) {
