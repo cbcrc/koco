@@ -157,10 +157,11 @@
               result.viewModel = imported.viewModel;
             }
 
-            if ((0, _kocoUtils.isFunction)(result.viewModel.activateAsync)) /* based on convention */{
+            // todo: rename activate to activateAsync?
+            if ((0, _kocoUtils.isFunction)(result.viewModel.activate)) /* based on convention */{
                 self.isActivating(true);
 
-                result.viewModel.activateAsync().then(function () {
+                result.viewModel.activate(context).then(function () {
                   context.page = result;
                   resolve(context);
                 }).catch(function (reason) {
@@ -183,6 +184,7 @@
       try {
         var viewModel = self.context().page.viewModel;
 
+        // todo: rename postActivate to postActivateAsync?
         if (viewModel.postActivateAsync) {
           viewModel.postActivateAsync().then(function () {
             resolve();

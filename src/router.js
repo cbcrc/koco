@@ -99,10 +99,11 @@ function activateAsync(self, context) {
           result.viewModel = imported.viewModel;
         }
 
-        if (isFunction(result.viewModel.activateAsync)) /* based on convention */ {
+        // todo: rename activate to activateAsync?
+        if (isFunction(result.viewModel.activate)) /* based on convention */ {
           self.isActivating(true);
 
-          result.viewModel.activateAsync()
+          result.viewModel.activate(context)
             .then(function() {
               context.page = result;
               resolve(context);
@@ -126,6 +127,7 @@ function postActivateAsync(self) {
     try {
       var viewModel = self.context().page.viewModel;
 
+      // todo: rename postActivate to postActivateAsync?
       if (viewModel.postActivateAsync) {
         viewModel.postActivateAsync()
           .then(function() {
