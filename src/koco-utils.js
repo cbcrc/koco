@@ -1,5 +1,5 @@
 export function requireIt(moduleName) {
-    return require.context('../../../modules/', true, /.*\.(js|html)$/)(moduleName);
+    return require.context('../../../src/modules/', true, /.*\.(js|html)$/)(moduleName);
 }
 
 export function requireItNpm(moduleName) {
