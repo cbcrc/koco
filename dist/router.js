@@ -202,7 +202,8 @@
 
   var DEFAULT_SETTINGS = {
     localBasePath: '.',
-    routerBasePath: 'koco/src'
+    routerBasePath: 'koco/src',
+    baseUrl: '/'
   };
 
   // TODO: Allow overriding page-activator in route config
