@@ -38,24 +38,14 @@
 
     _classCallCheck(this, Router);
 
-    this.first = _knockout2.default.observable(false);
     this.xyz = _knockout2.default.observable();
-    this.abc = _knockout2.default.observable();
 
     _koco2.default.viewModel.subscribe(function () {
-      var result = null;
-      _this.first(!_this.first());
+      _this.xyz(null);
+
       var viewModel = _koco2.default.viewModel();
       if (viewModel) {
-        result = { nodes: viewModel.page.template, data: viewModel.page.viewModel };
-      } else {
-        result = null;
-      }
-
-      if (_this.first()) {
-        _this.xyz(result);
-      } else {
-        _this.abc(result);
+        _this.xyz({ nodes: viewModel.page.template, data: viewModel.page.viewModel });
       }
     });
   };
