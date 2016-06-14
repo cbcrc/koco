@@ -1,10 +1,9 @@
 import ko from 'knockout';
 import Router from './router';
-import KocoComponentLoader from './koco-component-loader';
-import KocoComponentLoaderRouterPlugin from './koco-component-loader-router-plugin';
+import kocoComponentLoader from './koco-component-loader';
 
 function getRouterElement() {
-  var routerElements = document.getElementsByTagName('router');
+  const routerElements = document.getElementsByTagName('router');
 
   if (routerElements.length < 1) {
     throw new Error('Cannot initialize koco without any router in the page.');
@@ -59,9 +58,7 @@ class Koco {
     // todo: private - see http:// stackoverflow.com/a/22160051
     this._router = new Router(Object.assign({}, settings, { element: getRouterElement() }));
 
-    ko.components.loaders.unshift(new KocoComponentLoader({
-      plugins: [new KocoComponentLoaderRouterPlugin(this._router)]
-    }));
+    ko.components.loaders.unshift(kocoComponentLoader);
   }
 
   registerComponent(name, config) {

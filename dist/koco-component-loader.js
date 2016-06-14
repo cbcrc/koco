@@ -1,136 +1,90 @@
 (function (global, factory) {
-    if (typeof define === "function" && define.amd) {
-        define(['exports', 'knockout', './koco-utils'], factory);
-    } else if (typeof exports !== "undefined") {
-        factory(exports, require('knockout'), require('./koco-utils'));
-    } else {
-        var mod = {
-            exports: {}
-        };
-        factory(mod.exports, global.knockout, global.kocoUtils);
-        global.kocoComponentLoader = mod.exports;
-    }
+  if (typeof define === "function" && define.amd) {
+    define(['exports', 'knockout', './koco-utils'], factory);
+  } else if (typeof exports !== "undefined") {
+    factory(exports, require('knockout'), require('./koco-utils'));
+  } else {
+    var mod = {
+      exports: {}
+    };
+    factory(mod.exports, global.knockout, global.kocoUtils);
+    global.kocoComponentLoader = mod.exports;
+  }
 })(this, function (exports, _knockout, _kocoUtils) {
-    'use strict';
+  'use strict';
 
-    Object.defineProperty(exports, "__esModule", {
-        value: true
-    });
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
 
-    var _knockout2 = _interopRequireDefault(_knockout);
+  var _knockout2 = _interopRequireDefault(_knockout);
 
-    function _interopRequireDefault(obj) {
-        return obj && obj.__esModule ? obj : {
-            default: obj
-        };
+  function _interopRequireDefault(obj) {
+    return obj && obj.__esModule ? obj : {
+      default: obj
+    };
+  }
+
+  function _classCallCheck(instance, Constructor) {
+    if (!(instance instanceof Constructor)) {
+      throw new TypeError("Cannot call a class as a function");
+    }
+  }
+
+  var _createClass = function () {
+    function defineProperties(target, props) {
+      for (var i = 0; i < props.length; i++) {
+        var descriptor = props[i];
+        descriptor.enumerable = descriptor.enumerable || false;
+        descriptor.configurable = true;
+        if ("value" in descriptor) descriptor.writable = true;
+        Object.defineProperty(target, descriptor.key, descriptor);
+      }
     }
 
-    function _classCallCheck(instance, Constructor) {
-        if (!(instance instanceof Constructor)) {
-            throw new TypeError("Cannot call a class as a function");
-        }
+    return function (Constructor, protoProps, staticProps) {
+      if (protoProps) defineProperties(Constructor.prototype, protoProps);
+      if (staticProps) defineProperties(Constructor, staticProps);
+      return Constructor;
+    };
+  }();
+
+  var KocoComponentLoader = function () {
+    function KocoComponentLoader() {
+      _classCallCheck(this, KocoComponentLoader);
     }
 
-    var _createClass = function () {
-        function defineProperties(target, props) {
-            for (var i = 0; i < props.length; i++) {
-                var descriptor = props[i];
-                descriptor.enumerable = descriptor.enumerable || false;
-                descriptor.configurable = true;
-                if ("value" in descriptor) descriptor.writable = true;
-                Object.defineProperty(target, descriptor.key, descriptor);
-            }
-        }
+    _createClass(KocoComponentLoader, [{
+      key: 'loadComponent',
+      value: function loadComponent(name, componentConfig, callback) {
+        var imported = (0, _kocoUtils.importModule)(name, {
+          isHtmlOnly: componentConfig.isHtmlOnly,
+          isNpm: componentConfig.isNpm,
+          basePath: componentConfig.basePath,
+          template: componentConfig.template
+        });
 
-        return function (Constructor, protoProps, staticProps) {
-            if (protoProps) defineProperties(Constructor.prototype, protoProps);
-            if (staticProps) defineProperties(Constructor, staticProps);
-            return Constructor;
+        var result = {
+          template: _knockout2.default.utils.parseHtmlFragment(imported.templateString)
         };
-    }();
 
-    var DEFAULT_OPTIONS = {
-        localBasePath: '.',
-        plugins: []
-    };
+        if (componentConfig.isHtmlOnly !== true) {
+          result.createViewModel = function (params, componentInfo) {
+            if ((0, _kocoUtils.isFunction)(imported.viewModel)) {
+              var ViewModel = imported.viewModel;
+              return new ViewModel(params, componentInfo);
+            }
 
-    var DEFAULT_COMPONENT_CONFIG = {
-        type: 'component'
-    };
-
-    var KocoComponentLoader = function () {
-        function KocoComponentLoader(options) {
-            _classCallCheck(this, KocoComponentLoader);
-
-            this.options = Object.assign({}, DEFAULT_OPTIONS, options);
+            return imported.viewModel;
+          };
         }
 
-        // second
+        callback(result);
+      }
+    }]);
 
+    return KocoComponentLoader;
+  }();
 
-        _createClass(KocoComponentLoader, [{
-            key: 'loadComponent',
-            value: function loadComponent(name, componentConfig, callback) {
-                var finalComponentConfig = Object.assign({}, DEFAULT_COMPONENT_CONFIG, componentConfig);
-
-                // todo: isNpm, isNpm --else it is local
-                // basePath = 'bower_components/koco-' + name + '/src';
-                // todo: basePath override on componentConfig
-                // componentConfig.basePath
-
-                // if (finalComponentConfig.type === 'component') {
-                // const componentFullName = `${name}-component`;
-                // const basePath = finalComponentConfig.basePath ||
-                //     `${this.options.localBasePath}/${componentFullName}`;
-                // const moduleName = `${basePath}/${componentFullName}`;
-
-                // const imported = importModule(moduleName,
-                //     finalComponentConfig.isHtmlOnly,
-                //     finalComponentConfig.isNpm);
-
-                var imported = (0, _kocoUtils.importModule)(name, {
-                    isHtmlOnly: finalComponentConfig.isHtmlOnly,
-                    isNpm: finalComponentConfig.isNpm,
-                    basePath: finalComponentConfig.basePath,
-                    template: finalComponentConfig.template
-                });
-
-                var result = {
-                    template: _knockout2.default.utils.parseHtmlFragment(imported.templateString)
-                };
-
-                if (finalComponentConfig.isHtmlOnly !== true) {
-                    result.createViewModel = function (params, componentInfo) {
-                        if ((0, _kocoUtils.isFunction)(imported.viewModel)) {
-                            var ViewModel = imported.viewModel;
-                            return new ViewModel(params, componentInfo);
-                        }
-
-                        return imported.viewModel;
-                    };
-                }
-
-                callback(result);
-                // } else {
-                //     let component;
-
-                //     // http://stackoverflow.com/a/6260865
-                //     this.options.plugins.some(plugin => {
-                //         component = plugin.loadComponent(name, finalComponentConfig);
-                //         return !!component;
-                //     });
-
-                //     if (component) {
-                //         callback(component);
-                //     } else {
-                //         throw new Error(`Unsupported component type: ${finalComponentConfig.type}`);
-                //     }
-                // }
-            }
-        }]);
-
-        return KocoComponentLoader;
-    }();
-
-    exports.default = KocoComponentLoader;
+  exports.default = new KocoComponentLoader();
 });

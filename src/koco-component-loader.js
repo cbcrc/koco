@@ -1,92 +1,32 @@
 import ko from 'knockout';
 import { importModule, isFunction } from './koco-utils';
 
-const DEFAULT_OPTIONS = {
-    localBasePath: '.',
-    plugins: []
-};
+class KocoComponentLoader {
+  loadComponent(name, componentConfig, callback) {
+    const imported = importModule(name, {
+      isHtmlOnly: componentConfig.isHtmlOnly,
+      isNpm: componentConfig.isNpm,
+      basePath: componentConfig.basePath,
+      template: componentConfig.template
+    });
 
-const DEFAULT_COMPONENT_CONFIG = {
-    type: 'component'
-};
+    const result = {
+      template: ko.utils.parseHtmlFragment(imported.templateString)
+    };
 
-export default class KocoComponentLoader {
+    if (componentConfig.isHtmlOnly !== true) {
+      result.createViewModel = (params, componentInfo) => {
+        if (isFunction(imported.viewModel)) {
+          const ViewModel = imported.viewModel;
+          return new ViewModel(params, componentInfo);
+        }
 
-    constructor(options) {
-        this.options = Object.assign({}, DEFAULT_OPTIONS, options);
+        return imported.viewModel;
+      };
     }
 
-    // second
-    loadComponent(name, componentConfig, callback) {
-        const finalComponentConfig = Object.assign({}, DEFAULT_COMPONENT_CONFIG, componentConfig);
-
-        // todo: isNpm, isNpm --else it is local
-        // basePath = 'bower_components/koco-' + name + '/src';
-        // todo: basePath override on componentConfig
-        // componentConfig.basePath
-
-        // if (finalComponentConfig.type === 'component') {
-            // const componentFullName = `${name}-component`;
-            // const basePath = finalComponentConfig.basePath ||
-            //     `${this.options.localBasePath}/${componentFullName}`;
-            // const moduleName = `${basePath}/${componentFullName}`;
-
-            // const imported = importModule(moduleName,
-            //     finalComponentConfig.isHtmlOnly,
-            //     finalComponentConfig.isNpm);
-
-            const imported = importModule(name, {
-                isHtmlOnly: finalComponentConfig.isHtmlOnly,
-                isNpm: finalComponentConfig.isNpm,
-                basePath: finalComponentConfig.basePath,
-                template: finalComponentConfig.template
-            });
-
-            const result = {
-                template: ko.utils.parseHtmlFragment(imported.templateString)
-            };
-
-            if (finalComponentConfig.isHtmlOnly !== true) {
-                result.createViewModel = (params, componentInfo) => {
-                    if (isFunction(imported.viewModel)) {
-                        const ViewModel = imported.viewModel;
-                        return new ViewModel(params, componentInfo);
-                    }
-
-                    return imported.viewModel;
-                };
-            }
-
-            callback(result);
-        // } else {
-        //     let component;
-
-        //     // http://stackoverflow.com/a/6260865
-        //     this.options.plugins.some(plugin => {
-        //         component = plugin.loadComponent(name, finalComponentConfig);
-        //         return !!component;
-        //     });
-
-        //     if (component) {
-        //         callback(component);
-        //     } else {
-        //         throw new Error(`Unsupported component type: ${finalComponentConfig.type}`);
-        //     }
-        // }
-    }
-
-    // first
-    // getConfig(name, callback) {
-    //     callback(null);
-    // }
-
-    // third
-    // loadTemplate(name, templateConfig, callback) {
-    //     //callback(null);
-    // }
-
-    // fourth
-    // loadViewModel(name, componentConfig, callback) {
-    //     callback(null);
-    // }
+    callback(result);
+  }
 }
+
+export default new KocoComponentLoader();

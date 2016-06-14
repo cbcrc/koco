@@ -1,16 +1,16 @@
 (function (global, factory) {
   if (typeof define === "function" && define.amd) {
-    define(['exports', 'knockout', './router', './koco-component-loader', './koco-component-loader-router-plugin'], factory);
+    define(['exports', 'knockout', './router', './koco-component-loader'], factory);
   } else if (typeof exports !== "undefined") {
-    factory(exports, require('knockout'), require('./router'), require('./koco-component-loader'), require('./koco-component-loader-router-plugin'));
+    factory(exports, require('knockout'), require('./router'), require('./koco-component-loader'));
   } else {
     var mod = {
       exports: {}
     };
-    factory(mod.exports, global.knockout, global.router, global.kocoComponentLoader, global.kocoComponentLoaderRouterPlugin);
+    factory(mod.exports, global.knockout, global.router, global.kocoComponentLoader);
     global.koco = mod.exports;
   }
-})(this, function (exports, _knockout, _router, _kocoComponentLoader, _kocoComponentLoaderRouterPlugin) {
+})(this, function (exports, _knockout, _router, _kocoComponentLoader) {
   'use strict';
 
   Object.defineProperty(exports, "__esModule", {
@@ -22,8 +22,6 @@
   var _router2 = _interopRequireDefault(_router);
 
   var _kocoComponentLoader2 = _interopRequireDefault(_kocoComponentLoader);
-
-  var _kocoComponentLoaderRouterPlugin2 = _interopRequireDefault(_kocoComponentLoaderRouterPlugin);
 
   function _interopRequireDefault(obj) {
     return obj && obj.__esModule ? obj : {
@@ -105,9 +103,7 @@
         // todo: private - see http:// stackoverflow.com/a/22160051
         this._router = new _router2.default(Object.assign({}, settings, { element: getRouterElement() }));
 
-        _knockout2.default.components.loaders.unshift(new _kocoComponentLoader2.default({
-          plugins: [new _kocoComponentLoaderRouterPlugin2.default(this._router)]
-        }));
+        _knockout2.default.components.loaders.unshift(_kocoComponentLoader2.default);
       }
     }, {
       key: 'registerComponent',

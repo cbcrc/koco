@@ -1,6 +1,9 @@
 <!-- Copyright (c) CBC/Radio-Canada. All rights reserved.
 Licensed under the MIT license. See LICENSE file in the project root for full license information. -->
 
-<!-- ko if: $parent.koco() -->
-<!-- ko template: { nodes: $parent.koco().page.template, data: $parent.koco().page.viewModel } --><!-- /ko -->
+<!-- ko if: first() && xyz() -->
+<!-- ko template: xyz --><!-- /ko -->
+<!-- /ko -->
+<!-- ko if: !first() && abc() -->
+<!-- ko template: abc --><!-- /ko -->
 <!-- /ko -->
