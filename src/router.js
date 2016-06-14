@@ -163,7 +163,6 @@ class Router {
     self.byroads = new Byroads();
 
     ko.components.register('router', {
-      isHtmlOnly: true,
       basePath: self.settings.routerBasePath,
       isNpm: true
     });

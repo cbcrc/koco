@@ -221,7 +221,6 @@
       self.byroads = new _byroads2.default();
 
       _knockout2.default.components.register('router', {
-        isHtmlOnly: true,
         basePath: self.settings.routerBasePath,
         isNpm: true
       });
