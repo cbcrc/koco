@@ -98,9 +98,9 @@
 
                 this.subscribers = this.subscribers.filter(function (subscriber) {
                     if (unsubArgs.length === 2) {
-                        return subscriber.context === context && subscriber.handler === handler;
+                        return subscriber.context !== context && subscriber.handler !== handler;
                     }
-                    return subscriber.handler === handler;
+                    return subscriber.handler !== handler;
                 });
             }
         }]);

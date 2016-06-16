@@ -1,16 +1,16 @@
 (function (global, factory) {
   if (typeof define === "function" && define.amd) {
-    define(['exports', 'knockout', 'koco'], factory);
+    define(['exports', 'knockout', 'koco', './koco-utils'], factory);
   } else if (typeof exports !== "undefined") {
-    factory(exports, require('knockout'), require('koco'));
+    factory(exports, require('knockout'), require('koco'), require('./koco-utils'));
   } else {
     var mod = {
       exports: {}
     };
-    factory(mod.exports, global.knockout, global.koco);
+    factory(mod.exports, global.knockout, global.koco, global.kocoUtils);
     global.routerUi = mod.exports;
   }
-})(this, function (exports, _knockout, _koco) {
+})(this, function (exports, _knockout, _koco, _kocoUtils) {
   'use strict';
 
   Object.defineProperty(exports, "__esModule", {
@@ -41,7 +41,13 @@
     this.xyz = _knockout2.default.observable();
 
     _koco2.default.viewModel.subscribe(function () {
+      var previousViewModel = _this.xyz();
+
       _this.xyz(null);
+
+      if (previousViewModel && previousViewModel.data && (0, _kocoUtils.isFunction)(previousViewModel.data.dispose)) {
+        previousViewModel.data.dispose();
+      }
 
       var viewModel = _koco2.default.viewModel();
       if (viewModel) {
