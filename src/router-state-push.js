@@ -28,9 +28,22 @@ function getClickableElement(clckedElement /*, tagNames */ ) {
 
 function backAndForwardButtonHandler(self, e) {
   // why this if???
-  if (e.originalEvent.state !== null) {
-    self.backOrForwardDebounced(e.originalEvent.state);
-  }
+  // if (e.state !== null) {
+    self.backOrForwardDebounced(e.state);
+  // }
+}
+
+// todo: rendre overridable (configuration)?
+function shouldHandleNavigation(self, url) {
+  return url.toLowerCase().startsWith(self.router.settings.baseUrl.toLowerCase());
+}
+
+function startsWithRootUrl(self, url) {
+  return url.toLowerCase().startsWith((document.location.origin + self.router.settings.baseUrl).toLowerCase());
+}
+
+function getRelativeUrl(url) {
+  return '/' + url.replace(/^(?:\/\/|[^\/]+)*\//, '');
 }
 
 function hrefClickHandler(self, e, clickableElement) {
@@ -45,41 +58,38 @@ function hrefClickHandler(self, e, clickableElement) {
     return;
   }
 
-  const url = clickableElement.getAttribute('href');
+  let url = clickableElement.getAttribute('href');
 
   // TODO: permettre un regex (ou autre) en config pour savoir si c'est un lien interne
   // car avec ça les sous-domaines vont etre exclus
   // ce qui ne doit pas nécessairement etre le cas!
-  // var isRelativeUrl = url.indexOf(':') === -1;
-  // var isSameDomain = url.indexOf(document.domain) > -1;
+  const isRelativeUrl = url.indexOf(':') === -1;
+  /* var isSameDomain = url.indexOf(document.domain) > -1;*/
 
   // if ( /*isSameDomain || */ isRelativeUrl) {
-  if (url.toLowerCase().startsWith(self.router.settings.baseUrl.toLowerCase())) {
+
+  if (!isRelativeUrl && startsWithRootUrl(self, url)) {
+    url = getRelativeUrl(url);
+  }
+
+  if (shouldHandleNavigation(self, url)) {
     e.preventDefault();
-
-    const currentUrl = self.router.currentUrl();
-
-    if (url !== currentUrl) {
-      self.setUrlDebounced(url);
-    }
+    self.setUrlDebounced(url);
   }
 }
 
-function cleanUrl(self, url) {
-  const isRelativeUrl = url.indexOf(':') === -1;
+// function makeRelativeUrlStartWithSlash(self, url) {
+//   const isRelativeUrl = url.indexOf(':') === -1;
+//   let result = url;
 
-  if (isRelativeUrl) {
-    // Replace all (/.../g) leading slash (^\/) or (|) trailing slash (\/$) with an empty string.
-    url = url.replace(/^\/|\/$/g, '');
-    url = '/' + url;
-  }
+//   if (isRelativeUrl) {
+//     // Replace all (/.../g) leading slash (^\/) or (|) trailing slash (\/$) with an empty string.
+//     result = url.replace(/^\/|\/$/g, '');
+//     result = '/' + result;
+//   }
 
-  return url;
-}
-
-function getRelativeUrlFromLocation(self) {
-  return cleanUrl(self, self.router.currentUrl());
-}
+//   return result;
+// }
 
 export default class RouterStatePush {
   constructor(router) {
@@ -92,7 +102,7 @@ export default class RouterStatePush {
 
     // TODO: Pas besoin de debounce étant donné que le router annule automatiquement les requêtes précédentes... pas certain du résultat --> à valider
     self.setUrlDebounced = /* _.debounce( */ function(url) {
-      self.router.navigateAsync(cleanUrl(self, url));
+      self.router.navigateAsync(url);
     };
     /* , 500, {
         'leading': true,
@@ -144,7 +154,7 @@ export default class RouterStatePush {
     // même dans le cas où on fait back, il se peut que, dû au pipeline du router, l'url ne
     // soit pas celle du back (a cause de guardRoute par exemple)
     // il faut donc faire un replace du state à la fin pour être certain d'avoir la bonne url
-    return this.router.navigateAsync(getRelativeUrlFromLocation(this), {
+    return this.router.navigateAsync(this.router.currentUrl(), {
       replace: true,
       stateChanged: true,
       // force: true
