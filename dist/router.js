@@ -456,6 +456,11 @@
             self._navigatingTask.resolve = resolve;
             self._navigatingTask.reject = reject;
           });
+
+          // todo: configurable	
+          self._navigatingTask.promise.catch(function (ex) {
+            console.log(ex);
+          });
         }
 
         setTimeout(function () {
