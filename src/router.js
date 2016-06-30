@@ -285,7 +285,7 @@ class Router {
     // var self = this;
 
     // TODO: Bon format d'url - ou ca prend le #/ ???
-    // self.navigateAsync('page-non-trouvee');
+    // self.navigate('page-non-trouvee');
     alert('404 - Please override the router.unknownRouteHandler function to handle unknown routes.');
   }
 
@@ -385,7 +385,7 @@ class Router {
 
   // stateChanged option - for back and forward buttons (and onbeforeunload eventually)
   // Dans le cas du back or forward button, l'url doit etre remise sur la stack dans resetUrl
-  navigateAsync(url, options) {
+  navigate(url, options) {
     var self = this;
 
     // so on était déjà en train de naviguer on hijack la premiere navigation (récupère le dfd) et on kill le internalDefered

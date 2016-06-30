@@ -111,13 +111,13 @@
         _knockout2.default.components.register(name, config || {});
       }
     }, {
-      key: 'fireAsync',
-      value: function fireAsync() {
+      key: 'start',
+      value: function start() {
         if (!this.isInitialized) {
           throw 'koco is not is not initialized yet.';
         }
 
-        return this._router.navigateAsync(this._router.currentUrl(), {
+        return this._router.navigate(this._router.currentUrl(), {
           replace: true
         });
       }

@@ -102,7 +102,7 @@ export default class RouterStatePush {
 
     // TODO: Pas besoin de debounce étant donné que le router annule automatiquement les requêtes précédentes... pas certain du résultat --> à valider
     self.setUrlDebounced = /* _.debounce( */ function(url) {
-      self.router.navigateAsync(url);
+      self.router.navigate(url);
     };
     /* , 500, {
         'leading': true,
@@ -154,7 +154,7 @@ export default class RouterStatePush {
     // même dans le cas où on fait back, il se peut que, dû au pipeline du router, l'url ne
     // soit pas celle du back (a cause de guardRoute par exemple)
     // il faut donc faire un replace du state à la fin pour être certain d'avoir la bonne url
-    return this.router.navigateAsync(this.router.currentUrl(), {
+    return this.router.navigate(this.router.currentUrl(), {
       replace: true,
       stateChanged: true,
       // force: true

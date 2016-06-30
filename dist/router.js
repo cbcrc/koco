@@ -344,7 +344,7 @@
         // var self = this;
 
         // TODO: Bon format d'url - ou ca prend le #/ ???
-        // self.navigateAsync('page-non-trouvee');
+        // self.navigate('page-non-trouvee');
         alert('404 - Please override the router.unknownRouteHandler function to handle unknown routes.');
       }
     }, {
@@ -442,8 +442,8 @@
         }
       }
     }, {
-      key: 'navigateAsync',
-      value: function navigateAsync(url, options) {
+      key: 'navigate',
+      value: function navigate(url, options) {
         var self = this;
 
         // so on était déjà en train de naviguer on hijack la premiere navigation (récupère le dfd) et on kill le internalDefered
