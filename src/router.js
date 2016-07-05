@@ -122,14 +122,13 @@ function activateAsync(self, context) {
   });
 }
 
-function postActivateAsync(self) {
+function postActivate(self) {
   return new Promise((resolve, reject) => {
     try {
       var viewModel = self.context().page.viewModel;
 
-      // todo: rename postActivate to postActivateAsync?
-      if (viewModel.postActivateAsync) {
-        viewModel.postActivateAsync()
+      if (viewModel.postActivate) {
+        viewModel.postActivate()
           .then(function() {
             resolve();
           })
@@ -398,8 +397,8 @@ class Router {
         self._navigatingTask.resolve = resolve;
         self._navigatingTask.reject = reject;
       });
-      
-      // todo: configurable	
+
+      // todo: configurable
       self._navigatingTask.promise.catch(ex => {
         console.log(ex);
       });
@@ -441,9 +440,9 @@ class Router {
             self.setPageTitle(context.pageTitle);
           }
 
-          return postActivateAsync(self);
+          return postActivate(self);
         })
-        .then(function() { // equivalent of always for postActivateAsync
+        .then(function() { // equivalent of always for postActivate
           self._navigatingTask.resolve.apply(this, arguments);
           self._navigatingTask = null;
           self._internalNavigatingTask = null;

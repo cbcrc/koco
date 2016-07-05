@@ -179,14 +179,13 @@
     });
   }
 
-  function postActivateAsync(self) {
+  function postActivate(self) {
     return new Promise(function (resolve, reject) {
       try {
         var viewModel = self.context().page.viewModel;
 
-        // todo: rename postActivate to postActivateAsync?
-        if (viewModel.postActivateAsync) {
-          viewModel.postActivateAsync().then(function () {
+        if (viewModel.postActivate) {
+          viewModel.postActivate().then(function () {
             resolve();
           }).catch(function (reason) {
             reject(reason);
@@ -457,7 +456,7 @@
             self._navigatingTask.reject = reject;
           });
 
-          // todo: configurable	
+          // todo: configurable
           self._navigatingTask.promise.catch(function (ex) {
             console.log(ex);
           });
@@ -497,9 +496,9 @@
               self.setPageTitle(context.pageTitle);
             }
 
-            return postActivateAsync(self);
+            return postActivate(self);
           }).then(function () {
-            // equivalent of always for postActivateAsync
+            // equivalent of always for postActivate
             self._navigatingTask.resolve.apply(this, arguments);
             self._navigatingTask = null;
             self._internalNavigatingTask = null;
