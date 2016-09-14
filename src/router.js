@@ -73,16 +73,16 @@ function resetUrl(self) {
 function activateAsync(self, context) {
   return new Promise((resolve, reject) => {
     try {
-      let registeredPage = context.route.page;
+      const registeredPage = context.route.page;
       // let basePath = registeredPage.basePath || self.settings.localBasePath + '/' + registeredPage.componentName;
       // let moduleName = basePath + '/' + registeredPage.componentName;
-      let imported = importModule(registeredPage.componentName, {
+      const imported = importModule(registeredPage.componentName, {
         isHtmlOnly: registeredPage.isHtmlOnly,
         basePath: registeredPage.basePath,
         isNpm: registeredPage.isNpm,
         template: registeredPage.template
       });
-      let result = {
+      const result = {
         template: ko.utils.parseHtmlFragment(imported.templateString)
       };
 
@@ -125,14 +125,14 @@ function activateAsync(self, context) {
 function postActivate(self) {
   return new Promise((resolve, reject) => {
     try {
-      var viewModel = self.context().page.viewModel;
+      const viewModel = self.context().page.viewModel;
 
       if (viewModel.postActivate) {
         viewModel.postActivate()
-          .then(function() {
+          .then(() => {
             resolve();
           })
-          .catch(function(reason) {
+          .catch((reason) => {
             reject(reason);
           });
       } else {
@@ -155,57 +155,54 @@ const DEFAULT_SETTINGS = {
 // remove functions that should be private from prototype .. ex. getRegisteredPage
 class Router {
   constructor(settings) {
-    var self = this;
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, settings);
 
-    self.settings = Object.assign({}, DEFAULT_SETTINGS, settings);
-
-    self.byroads = new Byroads();
+    this.byroads = new Byroads();
 
     ko.components.register('router', {
-      basePath: self.settings.routerBasePath,
+      basePath: this.settings.routerBasePath,
       isNpm: true
     });
 
-    self.context = ko.observable(null);
+    this.context = ko.observable(null);
 
-    self.page = ko.pureComputed(function() {
-      var context = self.context();
+    this.page = ko.pureComputed(() => {
+      const context = this.context();
 
       return context ? context.page : null;
     });
 
-    self._pages = {};
+    this._pages = {};
 
-    self.navigating = new RouterEvent();
+    this.navigating = new RouterEvent();
 
-    self.cachedPages = {};
+    this.cachedPages = {};
 
-    self._navigatingTask = null;
-    self._internalNavigatingTask = null;
-    self.isNavigating = ko.observable(false);
-    self.isActivating = ko.observable(false);
+    this._navigatingTask = null;
+    this._internalNavigatingTask = null;
+    this.isNavigating = ko.observable(false);
+    this.isActivating = ko.observable(false);
 
-    self.routerState = new RouterState(self);
+    this.routerState = new RouterState(this);
   }
 
   registerPage(name, pageConfig) {
-    var self = this;
     pageConfig = pageConfig || {};
 
     if (!name) {
       throw new Error('Router.registerPage - Argument missing exception: name');
     }
 
-    if (self.isRegisteredPage(name)) {
-      throw new Error('Router.registerPage - Duplicate page: ' + name);
+    if (this.isRegisteredPage(name)) {
+      throw new Error(`Router.registerPage - Duplicate page: ${name}`);
     }
 
-    var componentName = name + '-page';
+    const componentName = `${name}-page`;
 
-    var page = Object.assign({
-      name: name,
+    const page = Object.assign({
+      name,
       title: '',
-      componentName: componentName
+      componentName
     }, pageConfig);
 
     ko.components.register(componentName, {
@@ -224,15 +221,14 @@ class Router {
   }
 
   addRoute(pattern, routeConfig) {
-    var self = this;
     routeConfig = routeConfig || {};
 
     // TODO: Valider que page exist else throw...
-    var params = {}; // Not to be confused with url params extrated by byroads.js
-    var pageName = pattern;
-    var pageTitle = '';
-    var cached = false;
-    var rules = {};
+    let params = {}; // Not to be confused with url params extrated by byroads.js
+    let pageName = pattern;
+    let pageTitle = '';
+    let cached = false;
+    let rules = {};
 
     if (routeConfig.hasOwnProperty('cached') && typeof routeConfig.cached === 'boolean') {
       cached = routeConfig.cached;
@@ -254,21 +250,22 @@ class Router {
       pageName = routeConfig.pageName;
     }
 
-    if (routeConfig.hasOwnProperty('rules') && (typeof routeConfig.rules === 'object' || routeConfig.rules instanceof Object)) {
+    if (routeConfig.hasOwnProperty('rules') &&
+      (typeof routeConfig.rules === 'object' || routeConfig.rules instanceof Object)) {
       rules = routeConfig.rules;
     }
 
-    if (!self.isRegisteredPage(pageName)) {
-      throw new Error('Router.addRoute - The page \'' + pageName + '\' is not registered. Please register the page before adding a route that refers to it.');
+    if (!this.isRegisteredPage(pageName)) {
+      throw new Error(`Router.addRoute - The page \'${pageName}\' is not registered. Please register the page before adding a route that refers to it.`);
     }
 
-    var priority;
+    let priority;
 
     if (routeConfig && routeConfig.priority) {
       priority = routeConfig.priority;
     }
 
-    var route = self.byroads.addRoute(pattern, priority);
+    const route = this.byroads.addRoute(pattern, priority);
 
     // TODO: Lier la page tout de suite au lieu de le faire à chaque fois qu'on crée un Route
 
@@ -281,24 +278,16 @@ class Router {
 
   // Cette méthode peut être overriden au besoin par le end user
   unknownRouteHandler() {
-    // var self = this;
-
-    // TODO: Bon format d'url - ou ca prend le #/ ???
-    // self.navigate('page-non-trouvee');
-    alert('404 - Please override the router.unknownRouteHandler function to handle unknown routes.');
+    console.log('404 - Please override the router.unknownRouteHandler function to handle unknown routes.');
   }
 
   // Cette méthode peut être overriden au besoin par le end user
   guardRoute( /*matchedRoute, newUrl*/ ) {
-    // var self = this;
-
     return true;
   }
 
-  // should not be exposed but it is for dialoger...
+  // should not be exposed; but it is, for dialoger...
   _navigateInner(newUrl, options, context) {
-    var self = this;
-
     const defaultOptions = {
       force: false
     };
@@ -309,75 +298,68 @@ class Router {
       context = new Context();
     }
 
-    if (self.byroads.getNumRoutes() === 0) {
-      self._internalNavigatingTask.reject('No route has been added to the router yet.');
+    if (this.byroads.getNumRoutes() === 0) {
+      this._internalNavigatingTask.reject('No route has been added to the router yet.');
       return;
     }
 
-    const matchedRoute = updateRoute(self, newUrl, context);
+    const matchedRoute = updateRoute(this, newUrl, context);
     let guardRouteResult = true;
 
     if (!filnalOptions.force) {
-      guardRouteResult = self.guardRoute(matchedRoute, newUrl);
+      guardRouteResult = this.guardRoute(matchedRoute, newUrl);
     }
 
     if (guardRouteResult === false) {
-      self._internalNavigatingTask.reject('guardRoute has blocked navigation.');
+      this._internalNavigatingTask.reject('guardRoute has blocked navigation.');
       return;
     } else if (guardRouteResult === true) {
       // continue
     } else if (typeof guardRouteResult === 'string' || guardRouteResult instanceof String) {
-      self._navigateInner(guardRouteResult, filnalOptions, context);
+      this._navigateInner(guardRouteResult, filnalOptions, context);
       return;
     } else {
-      self._internalNavigatingTask.reject('guardRoute has returned an invalid value. Only string or boolean are supported.');
+      this._internalNavigatingTask.reject('guardRoute has returned an invalid value. Only string or boolean are supported.');
       return;
     }
 
     if (matchedRoute) {
-      var previousContext = self.cachedPages[newUrl];
+      var previousContext = this.cachedPages[newUrl];
 
       if (previousContext) {
-        self._internalNavigatingTask.resolve(previousContext);
+        this._internalNavigatingTask.resolve(previousContext);
       } else {
-        activateAsync(self, context)
-          .then(function(context) {
-            self._internalNavigatingTask.resolve(context);
+        activateAsync(this, context)
+          .then((activatedContext) => {
+            this._internalNavigatingTask.resolve(activatedContext);
           })
-          .catch(function() {
-            self._internalNavigatingTask.reject.apply(self, arguments);
+          .catch(() => {
+            this._internalNavigatingTask.reject.apply(this, arguments);
           });
       }
     } else {
-      self._internalNavigatingTask.reject('404');
+      this._internalNavigatingTask.reject('404');
     }
   }
 
   // Cette méthode peut être overriden au besoin par le end user
   getPrioritizedRoute(matchedRoutes /*, newUrl*/ ) {
-    // var self = this;
-
     return matchedRoutes[0];
   }
 
   setPageTitle(pageTitle) {
-    // var self = this;
-
     document.title = pageTitle;
   }
 
   setUrlSilently(options) {
-    var self = this;
-
-    self.routerState.pushState(options);
-
-    var context = self.context();
+    this.routerState.pushState(options);
+    const context = this.context();
 
     if (context && context.route) {
-      var matchedRoute = updateRoute(self, options.url, context);
+      const matchedRoute = updateRoute(this, options.url, context);
 
       if (!matchedRoute) {
-        throw new Error('No route found for URL ' + options.url);
+        throw new Error(`No route found for URL ${options.url}`);
       }
     }
   }
@@ -385,27 +367,25 @@ class Router {
   // stateChanged option - for back and forward buttons (and onbeforeunload eventually)
   // Dans le cas du back or forward button, l'url doit etre remise sur la stack dans resetUrl
   navigate(url, options) {
-    var self = this;
-
     // so on était déjà en train de naviguer on hijack la premiere navigation (récupère le dfd) et on kill le internalDefered
-    if (self._internalNavigatingTask /* && self._internalNavigatingTask.dfd && self._internalNavigatingTask.dfd.state() === 'pending'*/ ) {
-      self._internalNavigatingTask.reject('navigation hijacked');
+    if (this._internalNavigatingTask /* && this._internalNavigatingTask.dfd && this._internalNavigatingTask.dfd.state() === 'pending'*/ ) {
+      this._internalNavigatingTask.reject('navigation hijacked');
     } else {
-      self._navigatingTask = {};
+      this._navigatingTask = {};
 
-      self._navigatingTask.promise = new Promise((resolve, reject) => {
-        self._navigatingTask.resolve = resolve;
-        self._navigatingTask.reject = reject;
+      this._navigatingTask.promise = new Promise((resolve, reject) => {
+        this._navigatingTask.resolve = resolve;
+        this._navigatingTask.reject = reject;
       });
 
       // todo: configurable
-      self._navigatingTask.promise.catch(ex => {
+      this._navigatingTask.promise.catch(ex => {
         console.log(ex);
       });
     }
 
-    setTimeout(function() {
-      var defaultOptions = {
+    setTimeout(() => {
+      const defaultOptions = {
         replace: false,
         stateChanged: false,
         force: false
@@ -413,73 +393,73 @@ class Router {
 
       options = Object.assign(defaultOptions, options || {});
 
-      self._internalNavigatingTask = {
-        options: options
+      this._internalNavigatingTask = {
+        options
       };
 
-      self._internalNavigatingTask.promise = new Promise((resolve, reject) => {
-        self._internalNavigatingTask.resolve = resolve;
-        self._internalNavigatingTask.reject = reject;
+      this._internalNavigatingTask.promise = new Promise((resolve, reject) => {
+        this._internalNavigatingTask.resolve = resolve;
+        this._internalNavigatingTask.reject = reject;
       });
 
-      self._internalNavigatingTask.promise
-        .then(function(context) {
+      this._internalNavigatingTask.promise
+        .then((context) => {
           if (context) {
-            var pushStateOptions = toPushStateOptions(self, context,
-              self._internalNavigatingTask.options);
-            self.routerState.pushState(pushStateOptions);
+            const pushStateOptions = toPushStateOptions(this, context,
+              this._internalNavigatingTask.options);
+            this.routerState.pushState(pushStateOptions);
 
-            var previousContext = self.context();
+            const previousContext = this.context();
 
             if (previousContext && previousContext.route.cached) {
-              self.cachedPages[previousContext.route.url] = previousContext;
+              this.cachedPages[previousContext.route.url] = previousContext;
             }
 
             context.isDialog = false;
-            self.context(context);
-            self.setPageTitle(context.pageTitle);
+            this.context(context);
+            this.setPageTitle(context.pageTitle);
           }
 
-          return postActivate(self);
+          return postActivate(this);
         })
-        .then(function() { // equivalent of always for postActivate
-          self._navigatingTask.resolve.apply(this, arguments);
-          self._navigatingTask = null;
-          self._internalNavigatingTask = null;
-          self.isActivating(false);
-          self.isNavigating(false);
+        .then(() => { // equivalent of always for postActivate
+          this._navigatingTask.resolve.apply(this, arguments);
+          this._navigatingTask = null;
+          this._internalNavigatingTask = null;
+          this.isActivating(false);
+          this.isNavigating(false);
         })
-        .catch(function(reason) {
+        .catch((reason) => {
           if (reason !== 'navigation hijacked') {
-            resetUrl(self);
+            resetUrl(this);
 
-            self._navigatingTask.reject.apply(this, arguments);
-            self._navigatingTask = null;
-            self._internalNavigatingTask = null;
-            self.isActivating(false);
-            self.isNavigating(false);
+            this._navigatingTask.reject.apply(this, arguments);
+            this._navigatingTask = null;
+            this._internalNavigatingTask = null;
+            this.isActivating(false);
+            this.isNavigating(false);
 
             if (reason == '404') {
               // covention pour les 404
               // TODO: passer plus d'info... ex. url demandée originalement, url finale tenant comptre de guardRoute
-              self.unknownRouteHandler();
+              this.unknownRouteHandler();
             }
           }
         });
 
       if (options.force) {
-        self.isNavigating(true);
-        self._navigateInner(url, options);
+        this.isNavigating(true);
+        this._navigateInner(url, options);
       } else {
-        self.navigating.canRoute(options).then(function(can) {
+        this.navigating.canRoute(options).then((can) => {
           if (can) {
-            self.isNavigating(true);
-            self._navigateInner(url, options);
+            this.isNavigating(true);
+            this._navigateInner(url, options);
           } else {
-            self._internalNavigatingTask.reject('routing cancelled by router.navigating.canRoute');
+            this._internalNavigatingTask.reject('routing cancelled by router.navigating.canRoute');
           }
-        }, function() {
-          self._internalNavigatingTask.reject.apply(this, arguments);
+        }, () => {
+          this._internalNavigatingTask.reject.apply(this, arguments);
         });
       }
     }, 0);
@@ -487,7 +467,7 @@ class Router {
 
     // TODO: S'assurer que canRoute() === false, remet l'url précédente sur back/forward button
 
-    return self._navigatingTask.promise;
+    return this._navigatingTask.promise;
   }
 
   currentUrl() {

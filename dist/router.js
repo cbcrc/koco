@@ -211,52 +211,51 @@
 
   var Router = function () {
     function Router(settings) {
+      var _this = this;
+
       _classCallCheck(this, Router);
 
-      var self = this;
+      this.settings = Object.assign({}, DEFAULT_SETTINGS, settings);
 
-      self.settings = Object.assign({}, DEFAULT_SETTINGS, settings);
-
-      self.byroads = new _byroads2.default();
+      this.byroads = new _byroads2.default();
 
       _knockout2.default.components.register('router', {
-        basePath: self.settings.routerBasePath,
+        basePath: this.settings.routerBasePath,
         isNpm: true
       });
 
-      self.context = _knockout2.default.observable(null);
+      this.context = _knockout2.default.observable(null);
 
-      self.page = _knockout2.default.pureComputed(function () {
-        var context = self.context();
+      this.page = _knockout2.default.pureComputed(function () {
+        var context = _this.context();
 
         return context ? context.page : null;
       });
 
-      self._pages = {};
+      this._pages = {};
 
-      self.navigating = new _routerEvent2.default();
+      this.navigating = new _routerEvent2.default();
 
-      self.cachedPages = {};
+      this.cachedPages = {};
 
-      self._navigatingTask = null;
-      self._internalNavigatingTask = null;
-      self.isNavigating = _knockout2.default.observable(false);
-      self.isActivating = _knockout2.default.observable(false);
+      this._navigatingTask = null;
+      this._internalNavigatingTask = null;
+      this.isNavigating = _knockout2.default.observable(false);
+      this.isActivating = _knockout2.default.observable(false);
 
-      self.routerState = new _routerStatePush2.default(self);
+      this.routerState = new _routerStatePush2.default(this);
     }
 
     _createClass(Router, [{
       key: 'registerPage',
       value: function registerPage(name, pageConfig) {
-        var self = this;
         pageConfig = pageConfig || {};
 
         if (!name) {
           throw new Error('Router.registerPage - Argument missing exception: name');
         }
 
-        if (self.isRegisteredPage(name)) {
+        if (this.isRegisteredPage(name)) {
           throw new Error('Router.registerPage - Duplicate page: ' + name);
         }
 
@@ -287,7 +286,6 @@
     }, {
       key: 'addRoute',
       value: function addRoute(pattern, routeConfig) {
-        var self = this;
         routeConfig = routeConfig || {};
 
         // TODO: Valider que page exist else throw...
@@ -317,17 +315,17 @@
           rules = routeConfig.rules;
         }
 
-        if (!self.isRegisteredPage(pageName)) {
+        if (!this.isRegisteredPage(pageName)) {
           throw new Error('Router.addRoute - The page \'' + pageName + '\' is not registered. Please register the page before adding a route that refers to it.');
         }
 
-        var priority;
+        var priority = void 0;
 
         if (routeConfig && routeConfig.priority) {
           priority = routeConfig.priority;
         }
 
-        var route = self.byroads.addRoute(pattern, priority);
+        var route = this.byroads.addRoute(pattern, priority);
 
         // TODO: Lier la page tout de suite au lieu de le faire à chaque fois qu'on crée un Route
 
@@ -340,23 +338,18 @@
     }, {
       key: 'unknownRouteHandler',
       value: function unknownRouteHandler() {
-        // var self = this;
-
-        // TODO: Bon format d'url - ou ca prend le #/ ???
-        // self.navigate('page-non-trouvee');
-        alert('404 - Please override the router.unknownRouteHandler function to handle unknown routes.');
+        console.log('404 - Please override the router.unknownRouteHandler function to handle unknown routes.');
       }
     }, {
       key: 'guardRoute',
       value: function guardRoute() /*matchedRoute, newUrl*/{
-        // var self = this;
-
         return true;
       }
     }, {
       key: '_navigateInner',
       value: function _navigateInner(newUrl, options, context) {
-        var self = this;
+        var _this2 = this,
+            _arguments = arguments;
 
         var defaultOptions = {
           force: false
@@ -368,72 +361,65 @@
           context = new _context2.default();
         }
 
-        if (self.byroads.getNumRoutes() === 0) {
-          self._internalNavigatingTask.reject('No route has been added to the router yet.');
+        if (this.byroads.getNumRoutes() === 0) {
+          this._internalNavigatingTask.reject('No route has been added to the router yet.');
           return;
         }
 
-        var matchedRoute = updateRoute(self, newUrl, context);
+        var matchedRoute = updateRoute(this, newUrl, context);
         var guardRouteResult = true;
 
         if (!filnalOptions.force) {
-          guardRouteResult = self.guardRoute(matchedRoute, newUrl);
+          guardRouteResult = this.guardRoute(matchedRoute, newUrl);
         }
 
         if (guardRouteResult === false) {
-          self._internalNavigatingTask.reject('guardRoute has blocked navigation.');
+          this._internalNavigatingTask.reject('guardRoute has blocked navigation.');
           return;
         } else if (guardRouteResult === true) {
           // continue
         } else if (typeof guardRouteResult === 'string' || guardRouteResult instanceof String) {
-            self._navigateInner(guardRouteResult, filnalOptions, context);
+            this._navigateInner(guardRouteResult, filnalOptions, context);
             return;
           } else {
-            self._internalNavigatingTask.reject('guardRoute has returned an invalid value. Only string or boolean are supported.');
+            this._internalNavigatingTask.reject('guardRoute has returned an invalid value. Only string or boolean are supported.');
             return;
           }
 
         if (matchedRoute) {
-          var previousContext = self.cachedPages[newUrl];
+          var previousContext = this.cachedPages[newUrl];
 
           if (previousContext) {
-            self._internalNavigatingTask.resolve(previousContext);
+            this._internalNavigatingTask.resolve(previousContext);
           } else {
-            activateAsync(self, context).then(function (context) {
-              self._internalNavigatingTask.resolve(context);
+            activateAsync(this, context).then(function (activatedContext) {
+              _this2._internalNavigatingTask.resolve(activatedContext);
             }).catch(function () {
-              self._internalNavigatingTask.reject.apply(self, arguments);
+              _this2._internalNavigatingTask.reject.apply(_this2, _arguments);
             });
           }
         } else {
-          self._internalNavigatingTask.reject('404');
+          this._internalNavigatingTask.reject('404');
         }
       }
     }, {
       key: 'getPrioritizedRoute',
       value: function getPrioritizedRoute(matchedRoutes /*, newUrl*/) {
-        // var self = this;
-
         return matchedRoutes[0];
       }
     }, {
       key: 'setPageTitle',
       value: function setPageTitle(pageTitle) {
-        // var self = this;
-
         document.title = pageTitle;
       }
     }, {
       key: 'setUrlSilently',
       value: function setUrlSilently(options) {
-        var self = this;
-
-        self.routerState.pushState(options);
-
-        var context = self.context();
+        this.routerState.pushState(options);
+        var context = this.context();
 
         if (context && context.route) {
-          var matchedRoute = updateRoute(self, options.url, context);
+          var matchedRoute = updateRoute(this, options.url, context);
 
           if (!matchedRoute) {
             throw new Error('No route found for URL ' + options.url);
@@ -443,21 +429,22 @@
     }, {
       key: 'navigate',
       value: function navigate(url, options) {
-        var self = this;
+        var _this3 = this,
+            _arguments2 = arguments;
 
         // so on était déjà en train de naviguer on hijack la premiere navigation (récupère le dfd) et on kill le internalDefered
-        if (self._internalNavigatingTask /* && self._internalNavigatingTask.dfd && self._internalNavigatingTask.dfd.state() === 'pending'*/) {
-            self._internalNavigatingTask.reject('navigation hijacked');
+        if (this._internalNavigatingTask /* && this._internalNavigatingTask.dfd && this._internalNavigatingTask.dfd.state() === 'pending'*/) {
+            this._internalNavigatingTask.reject('navigation hijacked');
           } else {
-          self._navigatingTask = {};
+          this._navigatingTask = {};
 
-          self._navigatingTask.promise = new Promise(function (resolve, reject) {
-            self._navigatingTask.resolve = resolve;
-            self._navigatingTask.reject = reject;
+          this._navigatingTask.promise = new Promise(function (resolve, reject) {
+            _this3._navigatingTask.resolve = resolve;
+            _this3._navigatingTask.reject = reject;
           });
 
           // todo: configurable
-          self._navigatingTask.promise.catch(function (ex) {
+          this._navigatingTask.promise.catch(function (ex) {
             console.log(ex);
           });
         }
@@ -471,77 +458,77 @@
 
           options = Object.assign(defaultOptions, options || {});
 
-          self._internalNavigatingTask = {
+          _this3._internalNavigatingTask = {
             options: options
           };
 
-          self._internalNavigatingTask.promise = new Promise(function (resolve, reject) {
-            self._internalNavigatingTask.resolve = resolve;
-            self._internalNavigatingTask.reject = reject;
+          _this3._internalNavigatingTask.promise = new Promise(function (resolve, reject) {
+            _this3._internalNavigatingTask.resolve = resolve;
+            _this3._internalNavigatingTask.reject = reject;
           });
 
-          self._internalNavigatingTask.promise.then(function (context) {
+          _this3._internalNavigatingTask.promise.then(function (context) {
             if (context) {
-              var pushStateOptions = toPushStateOptions(self, context, self._internalNavigatingTask.options);
-              self.routerState.pushState(pushStateOptions);
+              var pushStateOptions = toPushStateOptions(_this3, context, _this3._internalNavigatingTask.options);
+              _this3.routerState.pushState(pushStateOptions);
 
-              var previousContext = self.context();
+              var previousContext = _this3.context();
 
               if (previousContext && previousContext.route.cached) {
-                self.cachedPages[previousContext.route.url] = previousContext;
+                _this3.cachedPages[previousContext.route.url] = previousContext;
               }
 
               context.isDialog = false;
-              self.context(context);
-              self.setPageTitle(context.pageTitle);
+              _this3.context(context);
+              _this3.setPageTitle(context.pageTitle);
             }
 
-            return postActivate(self);
+            return postActivate(_this3);
           }).then(function () {
             // equivalent of always for postActivate
-            self._navigatingTask.resolve.apply(this, arguments);
-            self._navigatingTask = null;
-            self._internalNavigatingTask = null;
-            self.isActivating(false);
-            self.isNavigating(false);
+            _this3._navigatingTask.resolve.apply(_this3, _arguments2);
+            _this3._navigatingTask = null;
+            _this3._internalNavigatingTask = null;
+            _this3.isActivating(false);
+            _this3.isNavigating(false);
           }).catch(function (reason) {
             if (reason !== 'navigation hijacked') {
-              resetUrl(self);
+              resetUrl(_this3);
 
-              self._navigatingTask.reject.apply(this, arguments);
-              self._navigatingTask = null;
-              self._internalNavigatingTask = null;
-              self.isActivating(false);
-              self.isNavigating(false);
+              _this3._navigatingTask.reject.apply(_this3, _arguments2);
+              _this3._navigatingTask = null;
+              _this3._internalNavigatingTask = null;
+              _this3.isActivating(false);
+              _this3.isNavigating(false);
 
               if (reason == '404') {
                 // covention pour les 404
                 // TODO: passer plus d'info... ex. url demandée originalement, url finale tenant comptre de guardRoute
-                self.unknownRouteHandler();
+                _this3.unknownRouteHandler();
               }
             }
           });
 
           if (options.force) {
-            self.isNavigating(true);
-            self._navigateInner(url, options);
+            _this3.isNavigating(true);
+            _this3._navigateInner(url, options);
           } else {
-            self.navigating.canRoute(options).then(function (can) {
+            _this3.navigating.canRoute(options).then(function (can) {
               if (can) {
-                self.isNavigating(true);
-                self._navigateInner(url, options);
+                _this3.isNavigating(true);
+                _this3._navigateInner(url, options);
               } else {
-                self._internalNavigatingTask.reject('routing cancelled by router.navigating.canRoute');
+                _this3._internalNavigatingTask.reject('routing cancelled by router.navigating.canRoute');
               }
             }, function () {
-              self._internalNavigatingTask.reject.apply(this, arguments);
+              _this3._internalNavigatingTask.reject.apply(_this3, _arguments2);
             });
           }
         }, 0);
 
         // TODO: S'assurer que canRoute() === false, remet l'url précédente sur back/forward button
 
-        return self._navigatingTask.promise;
+        return this._navigatingTask.promise;
       }
     }, {
       key: 'currentUrl',
