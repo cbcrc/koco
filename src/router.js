@@ -433,7 +433,12 @@ class Router {
           if (reason !== 'navigation hijacked') {
             resetUrl(this);
 
-            this._navigatingTask.reject.apply(this, arguments);
+            if (reason == '404') {
+              this._navigatingTask.resolve.apply(this, arguments);
+            } else {
+              this._navigatingTask.reject.apply(this, arguments);
+            }
+
             this._navigatingTask = null;
             this._internalNavigatingTask = null;
             this.isActivating(false);

@@ -495,7 +495,12 @@
             if (reason !== 'navigation hijacked') {
               resetUrl(_this3);
 
-              _this3._navigatingTask.reject.apply(_this3, _arguments2);
+              if (reason == '404') {
+                _this3._navigatingTask.resolve.apply(_this3, _arguments2);
+              } else {
+                _this3._navigatingTask.reject.apply(_this3, _arguments2);
+              }
+
               _this3._navigatingTask = null;
               _this3._internalNavigatingTask = null;
               _this3.isActivating(false);
