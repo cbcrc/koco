@@ -333,8 +333,8 @@ class Router {
           .then((activatedContext) => {
             this._internalNavigatingTask.resolve(activatedContext);
           })
-          .catch(() => {
-            this._internalNavigatingTask.reject.apply(this, arguments);
+          .catch(err => {
+            this._internalNavigatingTask.reject(err);
           });
       }
     } else {
@@ -422,21 +422,21 @@ class Router {
 
           return postActivate(this);
         })
-        .then(() => { // equivalent of always for postActivate
-          this._navigatingTask.resolve.apply(this, arguments);
+        .then(value => { // equivalent of always for postActivate
+          this._navigatingTask.resolve(value);
           this._navigatingTask = null;
           this._internalNavigatingTask = null;
           this.isActivating(false);
           this.isNavigating(false);
         })
-        .catch((reason) => {
+        .catch(reason => {
           if (reason !== 'navigation hijacked') {
             resetUrl(this);
 
             if (reason == '404') {
-              this._navigatingTask.resolve.apply(this, arguments);
+              this._navigatingTask.resolve();
             } else {
-              this._navigatingTask.reject.apply(this, arguments);
+              this._navigatingTask.reject(reason);
             }
 
             this._navigatingTask = null;
@@ -463,8 +463,8 @@ class Router {
           } else {
             this._internalNavigatingTask.reject('routing cancelled by router.navigating.canRoute');
           }
-        }, () => {
-          this._internalNavigatingTask.reject.apply(this, arguments);
+        }, err => {
+          this._internalNavigatingTask.reject(err);
         });
       }
     }, 0);

@@ -348,8 +348,7 @@
     }, {
       key: '_navigateInner',
       value: function _navigateInner(newUrl, options, context) {
-        var _this2 = this,
-            _arguments = arguments;
+        var _this2 = this;
 
         var defaultOptions = {
           force: false
@@ -394,8 +393,8 @@
           } else {
             activateAsync(this, context).then(function (activatedContext) {
               _this2._internalNavigatingTask.resolve(activatedContext);
-            }).catch(function () {
-              _this2._internalNavigatingTask.reject.apply(_this2, _arguments);
+            }).catch(function (err) {
+              _this2._internalNavigatingTask.reject(err);
             });
           }
         } else {
@@ -429,8 +428,7 @@
     }, {
       key: 'navigate',
       value: function navigate(url, options) {
-        var _this3 = this,
-            _arguments2 = arguments;
+        var _this3 = this;
 
         // so on était déjà en train de naviguer on hijack la premiere navigation (récupère le dfd) et on kill le internalDefered
         if (this._internalNavigatingTask /* && this._internalNavigatingTask.dfd && this._internalNavigatingTask.dfd.state() === 'pending'*/) {
@@ -484,9 +482,9 @@
             }
 
             return postActivate(_this3);
-          }).then(function () {
+          }).then(function (value) {
             // equivalent of always for postActivate
-            _this3._navigatingTask.resolve.apply(_this3, _arguments2);
+            _this3._navigatingTask.resolve(value);
             _this3._navigatingTask = null;
             _this3._internalNavigatingTask = null;
             _this3.isActivating(false);
@@ -496,9 +494,9 @@
               resetUrl(_this3);
 
               if (reason == '404') {
-                _this3._navigatingTask.resolve.apply(_this3, _arguments2);
+                _this3._navigatingTask.resolve();
               } else {
-                _this3._navigatingTask.reject.apply(_this3, _arguments2);
+                _this3._navigatingTask.reject(reason);
               }
 
               _this3._navigatingTask = null;
@@ -525,8 +523,8 @@
               } else {
                 _this3._internalNavigatingTask.reject('routing cancelled by router.navigating.canRoute');
               }
-            }, function () {
-              _this3._internalNavigatingTask.reject.apply(_this3, _arguments2);
+            }, function (err) {
+              _this3._internalNavigatingTask.reject(err);
             });
           }
         }, 0);
