@@ -411,8 +411,16 @@ class Router {
 
             const previousContext = this.context();
 
-            if (previousContext && previousContext.route.cached) {
-              this.cachedPages[previousContext.route.url] = previousContext;
+            this.context(null);
+
+            if (previousContext) {
+              if (previousContext.route.cached) {
+                this.cachedPages[previousContext.route.url] = previousContext;
+              } else if (previousContext.page &&
+                previousContext.page.viewModel &&
+                isFunction(previousContext.page.viewModel.dispose)) {
+                previousContext.page.viewModel.dispose();
+              }
             }
 
             context.isDialog = false;
@@ -477,6 +485,14 @@ class Router {
 
   currentUrl() {
     return window.location.pathname + window.location.search + window.location.hash;
+  }
+
+  reload() {
+    return new Promise((resolve) => {
+      // hack pour rafraichir le formulaire car certain components ne supportent pas bien le two-way data binding!!!! - problematique!
+      this.context(this.context());
+      resolve();
+    });
   }
 }
 

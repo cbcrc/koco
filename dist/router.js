@@ -472,8 +472,14 @@
 
               var previousContext = _this3.context();
 
-              if (previousContext && previousContext.route.cached) {
-                _this3.cachedPages[previousContext.route.url] = previousContext;
+              _this3.context(null);
+
+              if (previousContext) {
+                if (previousContext.route.cached) {
+                  _this3.cachedPages[previousContext.route.url] = previousContext;
+                } else if (previousContext.page && previousContext.page.viewModel && (0, _kocoUtils.isFunction)(previousContext.page.viewModel.dispose)) {
+                  previousContext.page.viewModel.dispose();
+                }
               }
 
               context.isDialog = false;
@@ -537,6 +543,17 @@
       key: 'currentUrl',
       value: function currentUrl() {
         return window.location.pathname + window.location.search + window.location.hash;
+      }
+    }, {
+      key: 'reload',
+      value: function reload() {
+        var _this4 = this;
+
+        return new Promise(function (resolve) {
+          // hack pour rafraichir le formulaire car certain components ne supportent pas bien le two-way data binding!!!! - problematique!
+          _this4.context(_this4.context());
+          resolve();
+        });
       }
     }]);
 
