@@ -125,18 +125,24 @@ function activateAsync(self, context) {
 function postActivate(self) {
   return new Promise((resolve, reject) => {
     try {
-      const viewModel = self.context().page.viewModel;
+      const registeredPage = self.context().route.page;
 
-      if (viewModel.postActivate) {
-        viewModel.postActivate()
-          .then(() => {
-            resolve();
-          })
-          .catch((reason) => {
-            reject(reason);
-          });
-      } else {
+      if (registeredPage.isHtmlOnly === true) {
         resolve();
+      } else {
+        const viewModel = self.context().page.viewModel;
+
+        if (viewModel.postActivate) {
+          viewModel.postActivate()
+            .then(() => {
+              resolve();
+            })
+            .catch((reason) => {
+              reject(reason);
+            });
+        } else {
+          resolve();
+        }
       }
     } catch (err) {
       reject(err);

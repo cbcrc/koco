@@ -182,16 +182,22 @@
   function postActivate(self) {
     return new Promise(function (resolve, reject) {
       try {
-        var viewModel = self.context().page.viewModel;
+        var registeredPage = self.context().route.page;
 
-        if (viewModel.postActivate) {
-          viewModel.postActivate().then(function () {
-            resolve();
-          }).catch(function (reason) {
-            reject(reason);
-          });
-        } else {
+        if (registeredPage.isHtmlOnly === true) {
           resolve();
+        } else {
+          var viewModel = self.context().page.viewModel;
+
+          if (viewModel.postActivate) {
+            viewModel.postActivate().then(function () {
+              resolve();
+            }).catch(function (reason) {
+              reject(reason);
+            });
+          } else {
+            resolve();
+          }
         }
       } catch (err) {
         reject(err);
