@@ -1,16 +1,16 @@
 (function (global, factory) {
   if (typeof define === "function" && define.amd) {
-    define(['exports', 'knockout', './koco-utils', './byroads', './router-state-push', './route', './context', './router-event'], factory);
+    define(['exports', 'knockout', 'promise-defer', './koco-utils', './byroads', './router-state-push', './route', './context', './router-event'], factory);
   } else if (typeof exports !== "undefined") {
-    factory(exports, require('knockout'), require('./koco-utils'), require('./byroads'), require('./router-state-push'), require('./route'), require('./context'), require('./router-event'));
+    factory(exports, require('knockout'), require('promise-defer'), require('./koco-utils'), require('./byroads'), require('./router-state-push'), require('./route'), require('./context'), require('./router-event'));
   } else {
     var mod = {
       exports: {}
     };
-    factory(mod.exports, global.knockout, global.kocoUtils, global.byroads, global.routerStatePush, global.route, global.context, global.routerEvent);
+    factory(mod.exports, global.knockout, global.promiseDefer, global.kocoUtils, global.byroads, global.routerStatePush, global.route, global.context, global.routerEvent);
     global.router = mod.exports;
   }
-})(this, function (exports, _knockout, _kocoUtils, _byroads, _routerStatePush, _route, _context, _routerEvent) {
+})(this, function (exports, _knockout, _promiseDefer, _kocoUtils, _byroads, _routerStatePush, _route, _context, _routerEvent) {
   'use strict';
 
   Object.defineProperty(exports, "__esModule", {
@@ -18,6 +18,8 @@
   });
 
   var _knockout2 = _interopRequireDefault(_knockout);
+
+  var _promiseDefer2 = _interopRequireDefault(_promiseDefer);
 
   var _byroads2 = _interopRequireDefault(_byroads);
 
@@ -65,47 +67,48 @@
     };
   }();
 
+  var _extends = Object.assign || function (target) {
+    for (var i = 1; i < arguments.length; i++) {
+      var source = arguments[i];
+
+      for (var key in source) {
+        if (Object.prototype.hasOwnProperty.call(source, key)) {
+          target[key] = source[key];
+        }
+      }
+    }
+
+    return target;
+  };
+
   // todo: reject(...arguments) pour les promises anglobantes
+  /* todo: refactoring
+    - internalNavigatingTask == context creation and activation (shared with dialoger)
+    - navigatingTask == navigation process
+  */
 
-  function convertMatchedRoutes(self, matchedRoutes, url) {
-    var result = [];
+  var DEFAULT_SETTINGS = {
+    localBasePath: '.',
+    routerBasePath: 'koco/src',
+    baseUrl: '/'
+  };
 
-    for (var i = 0; i < matchedRoutes.length; i++) {
-      var matchedRoute = matchedRoutes[i];
-      var page = self.getRegisteredPage(matchedRoute.route.pageName);
-      var route = new _route2.default(url, matchedRoute, page);
-      result.push(route);
-    }
+  var DEFAULT_NAVIGATION_OPTIONS = {
+    replace: false,
+    force: false
+  };
 
-    return result;
-  }
+  var DEFAULT_BUILD_NEW_CONTEXT_OPTIONS = {
+    force: false
+  };
 
-  function updateRoute(self, newUrl, context) {
-    // Replace all (/.../g) leading slash (^\/) or (|) trailing slash (\/$) with an empty string.
-    var cleanedUrl = newUrl.replace(/^\/|\/$/g, '');
-
-    // Remove hash
-    cleanedUrl = cleanedUrl.replace(/#.*$/g, '');
-
-    var matchedRoutes = self.byroads.getMatchedRoutes(cleanedUrl, true);
-    var matchedRoute = null;
-
-    if (matchedRoutes.length > 0) {
-      matchedRoute = self.getPrioritizedRoute(convertMatchedRoutes(self, matchedRoutes, newUrl), newUrl);
-
-      context.addMatchedRoute(matchedRoute);
-    }
-
-    return matchedRoute;
-  }
-
-  function toPushStateOptions(self, context, options) {
+  function toPushStateOptions(context, options) {
     if (!context) {
-      throw new Error('router.toPushStateOptions - context is mandatory');
+      throw new Error('context is mandatory');
     }
 
     if (!context.route) {
-      throw new Error('router.toPushStateOptions - context.route is mandatory');
+      throw new Error('route is mandatory');
     }
 
     return {
@@ -116,100 +119,37 @@
     };
   }
 
-  function resetUrl(self) {
-    var context = self.context();
+  // http://stackoverflow.com/a/21489870
+  function makeQuerableDeferred(deferred) {
+    // Don't create a wrapper for promises that can already be queried.
+    if (deferred.isResolved) return deferred;
 
-    if (context) {
-      var pushStateOptions = toPushStateOptions(self, context, {
-        replace: !self._internalNavigatingTask.options.stateChanged
-      });
-      self.routerState.pushState(pushStateOptions);
-    }
-  }
+    var _isResolved = false;
+    var _isRejected = false;
 
-  function activateAsync(self, context) {
-    return new Promise(function (resolve, reject) {
-      try {
-        (function () {
-          var registeredPage = context.route.page;
-          // let basePath = registeredPage.basePath || self.settings.localBasePath + '/' + registeredPage.componentName;
-          // let moduleName = basePath + '/' + registeredPage.componentName;
-          var imported = (0, _kocoUtils.importModule)(registeredPage.componentName, {
-            isHtmlOnly: registeredPage.isHtmlOnly,
-            basePath: registeredPage.basePath,
-            isNpm: registeredPage.isNpm,
-            template: registeredPage.template
-          });
-          var result = {
-            template: _knockout2.default.utils.parseHtmlFragment(imported.templateString)
-          };
+    // Observe the promise, saving the fulfillment in a closure scope.
+    var wrappedPromise = deferred.promise.then(function (v) {
+      _isResolved = true;return v;
+    }, function (e) {
+      _isRejected = true;throw e;
+    });
 
-          if (registeredPage.isHtmlOnly === true) {
-            context.page = result;
-            resolve(context);
-          } else {
-            if ((0, _kocoUtils.isFunction)(imported.viewModel)) {
-              result.viewModel = new imported.viewModel(context, {
-                element: self.settings.element,
-                templateNodes: result.template
-              });
-            } else {
-              result.viewModel = imported.viewModel;
-            }
-
-            // todo: rename activate to activateAsync?
-            if ((0, _kocoUtils.isFunction)(result.viewModel.activate)) /* based on convention */{
-                self.isActivating(true);
-
-                result.viewModel.activate(context).then(function () {
-                  context.page = result;
-                  resolve(context);
-                }).catch(function (reason) {
-                  reject(reason);
-                });
-              } else {
-              context.page = result;
-              resolve(context);
-            }
-          }
-        })();
-      } catch (err) {
-        reject(err);
+    var result = _extends({}, deferred, {
+      isFulfilled: function isFulfilled() {
+        return _isResolved || _isRejected;
+      },
+      isResolved: function isResolved() {
+        return _isResolved;
+      },
+      isRejected: function isRejected() {
+        return _isRejected;
       }
     });
+
+    result.promise = wrappedPromise;
+
+    return result;
   }
-
-  function postActivate(self) {
-    return new Promise(function (resolve, reject) {
-      try {
-        var registeredPage = self.context().route.page;
-
-        if (registeredPage.isHtmlOnly === true) {
-          resolve();
-        } else {
-          var viewModel = self.context().page.viewModel;
-
-          if (viewModel.postActivate) {
-            viewModel.postActivate().then(function () {
-              resolve();
-            }).catch(function (reason) {
-              reject(reason);
-            });
-          } else {
-            resolve();
-          }
-        }
-      } catch (err) {
-        reject(err);
-      }
-    });
-  }
-
-  var DEFAULT_SETTINGS = {
-    localBasePath: '.',
-    routerBasePath: 'koco/src',
-    baseUrl: '/'
-  };
 
   // TODO: Allow overriding page-activator in route config
   // todo: refactoring
@@ -244,8 +184,6 @@
 
       this.cachedPages = {};
 
-      this._navigatingTask = null;
-      this._internalNavigatingTask = null;
       this.isNavigating = _knockout2.default.observable(false);
       this.isActivating = _knockout2.default.observable(false);
 
@@ -348,68 +286,71 @@
       }
     }, {
       key: 'guardRoute',
-      value: function guardRoute() /*matchedRoute, newUrl*/{
+      value: function guardRoute() /* matchedRoute, newUrl */{
         return true;
       }
     }, {
-      key: '_navigateInner',
-      value: function _navigateInner(newUrl, options, context) {
-        var _this2 = this;
+      key: 'buildNewContext',
+      value: function buildNewContext(url, options, context, buildNewContextDeferred) {
+        var internalDeferred = buildNewContextDeferred;
 
-        var defaultOptions = {
-          force: false
-        };
+        if (!internalDeferred) {
+          internalDeferred = (0, _promiseDefer2.default)();
+        }
 
-        var filnalOptions = Object.assign(defaultOptions, options || {});
+        var filnalOptions = Object.assign({}, DEFAULT_BUILD_NEW_CONTEXT_OPTIONS, options || {});
 
         if (!context) {
           context = new _context2.default();
         }
 
         if (this.byroads.getNumRoutes() === 0) {
-          this._internalNavigatingTask.reject('No route has been added to the router yet.');
-          return;
+          internalDeferred.reject('No route has been added to the router yet.');
+          return internalDeferred.promise;
         }
 
-        var matchedRoute = updateRoute(this, newUrl, context);
+        var matchedRoute = this.updateRoute(url, context);
         var guardRouteResult = true;
 
         if (!filnalOptions.force) {
-          guardRouteResult = this.guardRoute(matchedRoute, newUrl);
+          guardRouteResult = this.guardRoute(matchedRoute, url);
         }
 
-        if (guardRouteResult === false) {
-          this._internalNavigatingTask.reject('guardRoute has blocked navigation.');
-          return;
-        } else if (guardRouteResult === true) {
-          // continue
-        } else if (typeof guardRouteResult === 'string' || guardRouteResult instanceof String) {
-            this._navigateInner(guardRouteResult, filnalOptions, context);
-            return;
-          } else {
-            this._internalNavigatingTask.reject('guardRoute has returned an invalid value. Only string or boolean are supported.');
-            return;
+        if (guardRouteResult !== true) {
+          if (guardRouteResult === false) {
+            internalDeferred.reject('guardRoute has blocked navigation.');
+            return internalDeferred.promise;
+          } else if (typeof guardRouteResult === 'string' || guardRouteResult instanceof String) {
+            return this.buildNewContext(guardRouteResult, filnalOptions, context, internalDeferred);
           }
+
+          internalDeferred.reject('guardRoute has returned an invalid value. Only string or boolean are supported.');
+          return internalDeferred.promise;
+        }
 
         if (matchedRoute) {
-          var previousContext = this.cachedPages[newUrl];
+          var previousContext = this.cachedPages[url];
 
           if (previousContext) {
-            this._internalNavigatingTask.resolve(previousContext);
-          } else {
-            activateAsync(this, context).then(function (activatedContext) {
-              _this2._internalNavigatingTask.resolve(activatedContext);
-            }).catch(function (err) {
-              _this2._internalNavigatingTask.reject(err);
-            });
+            internalDeferred.resolve(previousContext);
+            return internalDeferred.promise;
           }
-        } else {
-          this._internalNavigatingTask.reject('404');
+
+          return this.activateAsync(context).then(function (activatedContext) {
+            internalDeferred.resolve(activatedContext);
+            return internalDeferred.promise;
+          }).catch(function (ex) {
+            internalDeferred.reject(ex);
+            return internalDeferred.promise;
+          });
         }
+
+        internalDeferred.reject('404');
+        return internalDeferred.promise;
       }
     }, {
       key: 'getPrioritizedRoute',
-      value: function getPrioritizedRoute(matchedRoutes /*, newUrl*/) {
+      value: function getPrioritizedRoute(matchedRoutes /* , newUrl */) {
         return matchedRoutes[0];
       }
     }, {
@@ -424,7 +365,7 @@
         var context = this.context();
 
         if (context && context.route) {
-          var matchedRoute = updateRoute(this, options.url, context);
+          var matchedRoute = this.updateRoute(options.url, context);
 
           if (!matchedRoute) {
             throw new Error('No route found for URL ' + options.url);
@@ -434,121 +375,222 @@
     }, {
       key: 'navigate',
       value: function navigate(url, options) {
-        var _this3 = this;
+        var _this2 = this;
 
-        // so on était déjà en train de naviguer on hijack la premiere navigation (récupère le dfd) et on kill le internalDefered
-        if (this._internalNavigatingTask /* && this._internalNavigatingTask.dfd && this._internalNavigatingTask.dfd.state() === 'pending'*/) {
-            this._internalNavigatingTask.reject('navigation hijacked');
-          } else {
-          this._navigatingTask = {};
+        if (this.navigationDeferred && !this.navigationDeferred.isFulfilled) {
+          this.navigationDeferred.reject('navigation cancelled');
+        }
 
-          this._navigatingTask.promise = new Promise(function (resolve, reject) {
-            _this3._navigatingTask.resolve = resolve;
-            _this3._navigatingTask.reject = reject;
-          });
+        this.navigationDeferred = makeQuerableDeferred((0, _promiseDefer2.default)());
 
-          // todo: configurable
-          this._navigatingTask.promise.catch(function (ex) {
-            console.log(ex);
+        // todo: configurable
+        this.navigationDeferred.promise.catch(function (ex) {
+          console.log(ex);
+        });
+
+        var finalOptions = Object.assign({}, DEFAULT_NAVIGATION_OPTIONS, options || {});
+
+        var buildNewContextPromise = void 0;
+
+        if (finalOptions.force) {
+          this.isNavigating(true);
+          buildNewContextPromise = this.buildNewContext(url, finalOptions);
+        } else {
+          buildNewContextPromise = this.navigating.canRoute(finalOptions).then(function (can) {
+            if (can) {
+              _this2.isNavigating(true);
+              return _this2.buildNewContext(url, finalOptions);
+            }
+            return Promise.reject('navigation cancelled by router.navigating.canRoute');
+          }, function (err) {
+            _this2.navigationDeferred.reject(err);
           });
         }
 
-        setTimeout(function () {
-          var defaultOptions = {
-            replace: false,
-            stateChanged: false,
-            force: false
-          };
+        buildNewContextPromise.then(function (context) {
+          if (context) {
+            var pushStateOptions = toPushStateOptions(context, finalOptions);
+            _this2.routerState.pushState(pushStateOptions);
 
-          options = Object.assign(defaultOptions, options || {});
+            var previousContext = _this2.context();
 
-          _this3._internalNavigatingTask = {
-            options: options
-          };
+            _this2.context(null);
 
-          _this3._internalNavigatingTask.promise = new Promise(function (resolve, reject) {
-            _this3._internalNavigatingTask.resolve = resolve;
-            _this3._internalNavigatingTask.reject = reject;
-          });
-
-          _this3._internalNavigatingTask.promise.then(function (context) {
-            if (context) {
-              var pushStateOptions = toPushStateOptions(_this3, context, _this3._internalNavigatingTask.options);
-              _this3.routerState.pushState(pushStateOptions);
-
-              var previousContext = _this3.context();
-
-              _this3.context(null);
-
-              if (previousContext) {
-                if (previousContext.route.cached) {
-                  _this3.cachedPages[previousContext.route.url] = previousContext;
-                } else if (previousContext.page && previousContext.page.viewModel && (0, _kocoUtils.isFunction)(previousContext.page.viewModel.dispose)) {
-                  previousContext.page.viewModel.dispose();
-                }
-              }
-
-              context.isDialog = false;
-              _this3.context(context);
-              _this3.setPageTitle(context.pageTitle);
-            }
-
-            return postActivate(_this3);
-          }).then(function (value) {
-            // equivalent of always for postActivate
-            _this3._navigatingTask.resolve(value);
-            _this3._navigatingTask = null;
-            _this3._internalNavigatingTask = null;
-            _this3.isActivating(false);
-            _this3.isNavigating(false);
-          }).catch(function (reason) {
-            if (reason !== 'navigation hijacked') {
-              resetUrl(_this3);
-
-              if (reason == '404') {
-                _this3._navigatingTask.resolve();
-              } else {
-                _this3._navigatingTask.reject(reason);
-              }
-
-              _this3._navigatingTask = null;
-              _this3._internalNavigatingTask = null;
-              _this3.isActivating(false);
-              _this3.isNavigating(false);
-
-              if (reason == '404') {
-                // covention pour les 404
-                // TODO: passer plus d'info... ex. url demandée originalement, url finale tenant comptre de guardRoute
-                _this3.unknownRouteHandler();
+            if (previousContext) {
+              if (previousContext.route.cached) {
+                _this2.cachedPages[previousContext.route.url] = previousContext;
+              } else if (previousContext.page && previousContext.page.viewModel && (0, _kocoUtils.isFunction)(previousContext.page.viewModel.dispose)) {
+                previousContext.page.viewModel.dispose();
               }
             }
-          });
 
-          if (options.force) {
-            _this3.isNavigating(true);
-            _this3._navigateInner(url, options);
-          } else {
-            _this3.navigating.canRoute(options).then(function (can) {
-              if (can) {
-                _this3.isNavigating(true);
-                _this3._navigateInner(url, options);
-              } else {
-                _this3._internalNavigatingTask.reject('routing cancelled by router.navigating.canRoute');
-              }
-            }, function (err) {
-              _this3._internalNavigatingTask.reject(err);
-            });
+            context.isDialog = false;
+            _this2.context(context);
+            _this2.setPageTitle(context.pageTitle);
           }
-        }, 0);
 
-        // TODO: S'assurer que canRoute() === false, remet l'url précédente sur back/forward button
+          return _this2.postActivate(_this2.context());
+        }).then(function (value) {
+          // equivalent of always for postActivate
+          _this2.navigationDeferred.resolve(value);
+          _this2.isNavigating(false);
+        }).catch(function (reason) {
+          if (reason !== 'navigation hijacked') {
+            _this2.resetUrl();
 
-        return this._navigatingTask.promise;
+            if (reason == '404') {
+              _this2.navigationDeferred.resolve();
+            } else {
+              _this2.navigationDeferred.reject(reason);
+            }
+
+            _this2.isNavigating(false);
+
+            if (reason == '404') {
+              // covention pour les 404
+              // TODO: passer plus d'info... ex. url demandée originalement, url finale tenant comptre de guardRoute
+              _this2.unknownRouteHandler();
+            }
+          }
+        });
+
+        return this.navigationDeferred.promise;
       }
     }, {
       key: 'currentUrl',
       value: function currentUrl() {
         return window.location.pathname + window.location.search + window.location.hash;
+      }
+    }, {
+      key: 'resetUrl',
+      value: function resetUrl() {
+        var context = this.context();
+
+        if (context) {
+          var pushStateOptions = toPushStateOptions(context, {
+            replace: true // todo: valider que c'est la bonne valeur
+          });
+          this.routerState.pushState(pushStateOptions);
+        }
+      }
+    }, {
+      key: 'convertMatchedRoutes',
+      value: function convertMatchedRoutes(matchedRoutes, url) {
+        var result = [];
+
+        for (var i = 0; i < matchedRoutes.length; i++) {
+          var matchedRoute = matchedRoutes[i];
+          var page = this.getRegisteredPage(matchedRoute.route.pageName);
+          var route = new _route2.default(url, matchedRoute, page);
+          result.push(route);
+        }
+
+        return result;
+      }
+    }, {
+      key: 'updateRoute',
+      value: function updateRoute(newUrl, context) {
+        // Replace all (/.../g) leading slash (^\/) or (|) trailing slash (\/$) with an empty string.
+        var cleanedUrl = newUrl.replace(/^\/|\/$/g, '');
+
+        // Remove hash
+        cleanedUrl = cleanedUrl.replace(/#.*$/g, '');
+
+        var matchedRoutes = this.byroads.getMatchedRoutes(cleanedUrl, true);
+        var matchedRoute = null;
+
+        if (matchedRoutes.length > 0) {
+          var convertedMatchedRoutes = this.convertMatchedRoutes(matchedRoutes, newUrl);
+          matchedRoute = this.getPrioritizedRoute(convertedMatchedRoutes, newUrl);
+
+          context.addMatchedRoute(matchedRoute);
+        }
+
+        return matchedRoute;
+      }
+    }, {
+      key: 'activateAsync',
+      value: function activateAsync(context) {
+        var _this3 = this;
+
+        return new Promise(function (resolve, reject) {
+          try {
+            (function () {
+              var registeredPage = context.route.page;
+              // let basePath = registeredPage.basePath || this.settings.localBasePath + '/' + registeredPage.componentName;
+              // let moduleName = basePath + '/' + registeredPage.componentName;
+              var imported = (0, _kocoUtils.importModule)(registeredPage.componentName, {
+                isHtmlOnly: registeredPage.isHtmlOnly,
+                basePath: registeredPage.basePath,
+                isNpm: registeredPage.isNpm,
+                template: registeredPage.template
+              });
+              var result = {
+                template: _knockout2.default.utils.parseHtmlFragment(imported.templateString)
+              };
+
+              if (registeredPage.isHtmlOnly === true) {
+                context.page = result;
+                resolve(context);
+              } else {
+                if ((0, _kocoUtils.isFunction)(imported.viewModel)) {
+                  result.viewModel = new imported.viewModel(context, {
+                    element: _this3.settings.element,
+                    templateNodes: result.template
+                  });
+                } else {
+                  result.viewModel = imported.viewModel;
+                }
+
+                // todo: rename activate to activateAsync?
+                if ((0, _kocoUtils.isFunction)(result.viewModel.activate)) /* based on convention */{
+                    _this3.isActivating(true);
+
+                    result.viewModel.activate(context).then(function () {
+                      context.page = result;
+                      _this3.isActivating(false);
+                      resolve(context);
+                    }).catch(function (reason) {
+                      _this3.isActivating(false);
+                      reject(reason);
+                    });
+                  } else {
+                  context.page = result;
+                  resolve(context);
+                }
+              }
+            })();
+          } catch (err) {
+            reject(err);
+          }
+        });
+      }
+    }, {
+      key: 'postActivate',
+      value: function postActivate(context) {
+        return new Promise(function (resolve, reject) {
+          try {
+            var registeredPage = context.route.page;
+
+            if (registeredPage.isHtmlOnly === true) {
+              resolve();
+            } else {
+              var viewModel = context.page.viewModel;
+
+              if (viewModel.postActivate) {
+                viewModel.postActivate().then(function () {
+                  resolve();
+                }).catch(function (reason) {
+                  reject(reason);
+                });
+              } else {
+                resolve();
+              }
+            }
+          } catch (err) {
+            reject(err);
+          }
+        });
       }
     }, {
       key: 'reload',
@@ -557,7 +599,9 @@
 
         return new Promise(function (resolve) {
           // hack pour rafraichir le formulaire car certain components ne supportent pas bien le two-way data binding!!!! - problematique!
-          _this4.context(_this4.context());
+          // todo: (à tester) je ne pense pas que ca fonctionne ... knockout doit détecter que c'est le même objet et ne rien faire...
+          // il faudrait peut-être Object.assign({}, this.context()) --- créer une copie
+          _this4.context(Object.assign({}, _this4.context()));
           resolve();
         });
       }

@@ -3,14 +3,14 @@ import koco from 'koco';
 
 class Router {
   constructor(/* params, componentInfo */) {
-    this.template = ko.observable();
+    this.template = ko.pureComputed(() => {
+      const kocoViewModel = koco.viewModel();
 
-    koco.viewModel.subscribe(viewModel => {
-      this.template(null);
-
-      if (viewModel) {
-        this.template({ nodes: viewModel.page.template, data: viewModel.page.viewModel });
+      if (kocoViewModel) {
+        return { nodes: kocoViewModel.page.template, data: kocoViewModel.page.viewModel };
       }
+
+      return null;
     });
   }
 }

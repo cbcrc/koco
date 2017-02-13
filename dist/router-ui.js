@@ -34,18 +34,16 @@
   }
 
   var Router = function Router() /* params, componentInfo */{
-    var _this = this;
-
     _classCallCheck(this, Router);
 
-    this.template = _knockout2.default.observable();
+    this.template = _knockout2.default.pureComputed(function () {
+      var kocoViewModel = _koco2.default.viewModel();
 
-    _koco2.default.viewModel.subscribe(function (viewModel) {
-      _this.template(null);
-
-      if (viewModel) {
-        _this.template({ nodes: viewModel.page.template, data: viewModel.page.viewModel });
+      if (kocoViewModel) {
+        return { nodes: kocoViewModel.page.template, data: kocoViewModel.page.viewModel };
       }
+
+      return null;
     });
   };
 

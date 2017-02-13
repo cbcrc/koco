@@ -155,9 +155,7 @@ export default class RouterStatePush {
     // soit pas celle du back (a cause de guardRoute par exemple)
     // il faut donc faire un replace du state à la fin pour être certain d'avoir la bonne url
     return this.router.navigate(this.router.currentUrl(), {
-      replace: true,
-      stateChanged: true,
-      // force: true
+      replace: true
     });
   }
 
