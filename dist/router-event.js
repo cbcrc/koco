@@ -45,10 +45,12 @@
   // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
   function checkSubscriber(subscribers, options, index) {
-    // TODO: Refactore!!
+    if (options.force) {
+      return Promise.resove(true);
+    }
+
     return new Promise(function (resolve /* , reject*/) {
-      // No more subscribers to check
-      if (index >= subscribers.length) {
+      if (index < 0) {
         resolve(true);
       }
 
@@ -59,14 +61,14 @@
         resolve(false);
       }
 
-      Promise.all([handlerResult]).then(function (result) {
-        if (!result[0]) {
+      Promise.all([handlerResult]).then(function (results) {
+        if (!results[0]) {
           resolve(false);
+        } else {
+          checkSubscriber(subscribers, options, index - 1).then(function (r) {
+            resolve(r);
+          });
         }
-
-        checkSubscriber(subscribers, options, index + 1).then(function (r) {
-          resolve(r);
-        });
       });
     });
   }
@@ -89,7 +91,7 @@
     }, {
       key: "canRoute",
       value: function canRoute(options) {
-        return checkSubscriber(this.subscribers, options, 0);
+        return checkSubscriber(this.subscribers, options, this.subscribers.length - 1);
       }
     }, {
       key: "unsubscribe",

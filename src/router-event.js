@@ -2,10 +2,12 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 function checkSubscriber(subscribers, options, index) {
-  // TODO: Refactore!!
+  if (options.force) {
+    return Promise.resove(true);
+  }
+
   return new Promise((resolve /* , reject*/ ) => {
-    // No more subscribers to check
-    if (index >= subscribers.length) {
+    if (index < 0) {
       resolve(true);
     }
 
@@ -16,15 +18,15 @@ function checkSubscriber(subscribers, options, index) {
       resolve(false);
     }
 
-    Promise.all([handlerResult]).then(result => {
-      if (!result[0]) {
+    Promise.all([handlerResult]).then((results) => {
+      if (!results[0]) {
         resolve(false);
+      } else {
+        checkSubscriber(subscribers, options, index - 1)
+          .then((r) => {
+            resolve(r);
+          });
       }
-
-      checkSubscriber(subscribers, options, index + 1)
-        .then(r => {
-          resolve(r);
-        });
     });
   });
 }
@@ -42,13 +44,13 @@ export default class RouterEvent {
   }
 
   canRoute(options) {
-    return checkSubscriber(this.subscribers, options, 0);
+    return checkSubscriber(this.subscribers, options, this.subscribers.length - 1);
   }
 
   unsubscribe(handler, context) {
     const unsubArgs = arguments;
 
-    this.subscribers = this.subscribers.filter(subscriber => {
+    this.subscribers = this.subscribers.filter((subscriber) => {
       if (unsubArgs.length === 2) {
         return subscriber.context !== context && subscriber.handler !== handler;
       }

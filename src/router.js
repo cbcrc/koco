@@ -1,18 +1,10 @@
 import ko from 'knockout';
 import defer from 'promise-defer';
-import { importModule, isFunction } from './koco-utils';
+import { activate, postActivate, isFunction } from './koco-utils';
 import Byroads from './byroads';
 import RouterState from './router-state-push';
 import Route from './route';
-import Context from './context';
 import RouterEvent from './router-event';
-
-
-// todo: reject(...arguments) pour les promises anglobantes
-/* todo: refactoring
-  - internalNavigatingTask == context creation and activation (shared with dialoger)
-  - navigatingTask == navigation process
-*/
 
 const DEFAULT_SETTINGS = {
   localBasePath: '.',
@@ -20,33 +12,10 @@ const DEFAULT_SETTINGS = {
   baseUrl: '/'
 };
 
-const DEFAULT_NAVIGATION_OPTIONS = {
+const DEFAULT_OPTIONS = {
   replace: false,
   force: false
 };
-
-const DEFAULT_BUILD_NEW_CONTEXT_OPTIONS = {
-  force: false
-};
-
-
-
-function toPushStateOptions(context, options) {
-  if (!context) {
-    throw new Error('context is mandatory');
-  }
-
-  if (!context.route) {
-    throw new Error('route is mandatory');
-  }
-
-  return {
-    url: context.route.url,
-    pageTitle: context.pageTitle,
-    stateObject: options.stateObject || {},
-    replace: options.replace || false
-  };
-}
 
 // http://stackoverflow.com/a/21489870
 function makeQuerableDeferred(deferred) {
@@ -73,9 +42,6 @@ function makeQuerableDeferred(deferred) {
   return result;
 }
 
-// TODO: Allow overriding page-activator in route config
-// todo: refactoring
-// remove functions that should be private from prototype .. ex. getRegisteredPage
 class Router {
   constructor(settings) {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, settings);
@@ -87,12 +53,21 @@ class Router {
       isNpm: true
     });
 
-    this.context = ko.observable(null);
+    this.page = ko.observable(null);
+    this.route = ko.observable(null);
+    this.pageTitle = ko.observable('');
 
-    this.page = ko.pureComputed(() => {
-      const context = this.context();
+    this.context = ko.pureComputed(() => ({
+      page: this.page(),
+      route: this.route(),
+      pageTitle: this.pageTitle()
+    }));
 
-      return context ? context.page : null;
+    this.route.subscribe((route) => {
+      if (route) {
+        this.pageTitle(this.getPageTitle(route));
+        this.setPageTitle(route);
+      }
     });
 
     this._pages = {};
@@ -197,6 +172,19 @@ class Router {
     route.rules = rules;
   }
 
+  toPushStateOptions(route, options) {
+    if (!route) {
+      throw new Error('route is mandatory');
+    }
+
+    return {
+      url: route.url,
+      pageTitle: this.getPageTitle(route),
+      stateObject: options.stateObject || {},
+      replace: options.replace || false
+    };
+  }
+
   // Cette méthode peut être overriden au besoin par le end user
   unknownRouteHandler() {
     console.log('404 - Please override the router.unknownRouteHandler function to handle unknown routes.');
@@ -207,65 +195,34 @@ class Router {
     return true;
   }
 
-  // also used by dialoger...
-  buildNewContext(url, options, context, buildNewContextDeferred) {
-    let internalDeferred = buildNewContextDeferred;
-
-    if (!internalDeferred) {
-      internalDeferred = defer();
-    }
-
-    const filnalOptions = Object.assign({}, DEFAULT_BUILD_NEW_CONTEXT_OPTIONS, options || {});
-
-    if (!context) {
-      context = new Context();
-    }
-
-    if (this.byroads.getNumRoutes() === 0) {
-      internalDeferred.reject('No route has been added to the router yet.');
-      return internalDeferred.promise;
-    }
-
-    const matchedRoute = this.updateRoute(url, context);
-    let guardRouteResult = true;
-
-    if (!filnalOptions.force) {
-      guardRouteResult = this.guardRoute(matchedRoute, url);
-    }
-
-    if (guardRouteResult !== true) {
-      if (guardRouteResult === false) {
-        internalDeferred.reject('guardRoute has blocked navigation.');
-        return internalDeferred.promise;
-      } else if (typeof guardRouteResult === 'string' || guardRouteResult instanceof String) {
-        return this.buildNewContext(guardRouteResult, filnalOptions, context, internalDeferred);
+  getMatchedRoute(url, options) {
+    return new Promise((resolve, reject) => {
+      if (this.byroads.getNumRoutes() === 0) {
+        reject('No route has been added to the router yet.');
       }
 
-      internalDeferred.reject('guardRoute has returned an invalid value. Only string or boolean are supported.');
-      return internalDeferred.promise;
-    }
+      const matchedRoute = this.getPrioritizedMatchedRoute(url);
 
-    if (matchedRoute) {
-      const previousContext = this.cachedPages[url];
+      let guardRouteResult = true;
 
-      if (previousContext) {
-        internalDeferred.resolve(previousContext);
-        return internalDeferred.promise;
+      if (!options.force) {
+        guardRouteResult = this.guardRoute(matchedRoute, url);
       }
 
-      return this.activateAsync(context)
-        .then((activatedContext) => {
-          internalDeferred.resolve(activatedContext);
-          return internalDeferred.promise;
-        })
-        .catch((ex) => {
-          internalDeferred.reject(ex);
-          return internalDeferred.promise;
-        });
-    }
+      if (guardRouteResult !== true) {
+        if (guardRouteResult === false) {
+          reject('guardRoute has blocked navigation.');
+        } else if (typeof guardRouteResult === 'string' || guardRouteResult instanceof String) {
+          // recursive
+          this.getMatchedRoute(guardRouteResult, options)
+            .then(x => resolve(x), y => reject(y));
+        }
 
-    internalDeferred.reject('404');
-    return internalDeferred.promise;
+        reject('guardRoute has returned an invalid value. Only string or boolean are supported.');
+      } else {
+        resolve(matchedRoute);
+      }
+    });
   }
 
   // Cette méthode peut être overriden au besoin par le end user
@@ -273,20 +230,23 @@ class Router {
     return matchedRoutes[0];
   }
 
-  setPageTitle(pageTitle) {
-    document.title = pageTitle;
+  // Cette méthode peut être overriden au besoin par le end user
+  setPageTitle(route) {
+    document.title = this.getPageTitle(route);
+  }
+
+  // Cette méthode peut être overriden au besoin par le end user
+  getPageTitle(route) {
+    return route.pageTitle || route.page.title;
   }
 
   setUrlSilently(options) {
-    this.routerState.pushState(options);
-    const context = this.context();
-
-    if (context && context.route) {
-      const matchedRoute = this.updateRoute(options.url, context);
-
-      if (!matchedRoute) {
-        throw new Error(`No route found for URL ${options.url}`);
-      }
+    const matchedRoute = this.getPrioritizedMatchedRoute(options.url);
+    if (!matchedRoute) {
+      throw new Error(`No route found for URL ${options.url}`);
+    } else {
+      this.routerState.pushState(options);
+      this.route(matchedRoute);
     }
   }
 
@@ -305,59 +265,58 @@ class Router {
       console.log(ex);
     });
 
-    const finalOptions = Object.assign({}, DEFAULT_NAVIGATION_OPTIONS, options || {});
+    const finalOptions = Object.assign({}, DEFAULT_OPTIONS, options || {});
 
-    let buildNewContextPromise;
-
-    if (finalOptions.force) {
-      this.isNavigating(true);
-      buildNewContextPromise = this.buildNewContext(url, finalOptions);
-    } else {
-      buildNewContextPromise = this.navigating.canRoute(finalOptions).then((can) => {
+    this.navigating.canRoute(finalOptions)
+      .then((can) => {
         if (can) {
           this.isNavigating(true);
-          return this.buildNewContext(url, finalOptions);
+          return this.getMatchedRoute(url, finalOptions);
         }
         return Promise.reject('navigation cancelled by router.navigating.canRoute');
-      }, (err) => {
-        this.navigationDeferred.reject(err);
-      });
-    }
-
-    buildNewContextPromise
+      })
+      .then((route) => {
+        if (route) {
+          return activate(route.page, this.settings.element, { route: route, isDialog: false }, this.isActivating)
+            .then(page => ({
+              route: route,
+              page: page
+            }));
+        }
+        return Promise.reject('404');
+      })
       .then((context) => {
-        if (context) {
-          const pushStateOptions = toPushStateOptions(context, finalOptions);
-          this.routerState.pushState(pushStateOptions);
+        const pushStateOptions = this.toPushStateOptions(context.route, finalOptions);
+        this.routerState.pushState(pushStateOptions);
 
-          const previousContext = this.context();
+        const previousPage = this.page();
 
-          this.context(null);
+        this.page(null);
+        this.route(null);
 
-          if (previousContext) {
-            if (previousContext.route.cached) {
-              this.cachedPages[previousContext.route.url] = previousContext;
-            } else if (previousContext.page &&
-              previousContext.page.viewModel &&
-              isFunction(previousContext.page.viewModel.dispose)) {
-              previousContext.page.viewModel.dispose();
-            }
-          }
-
-          context.isDialog = false;
-          this.context(context);
-          this.setPageTitle(context.pageTitle);
+        if (previousPage && previousPage.viewModel && isFunction(previousPage.viewModel.dispose)) {
+          previousPage.viewModel.dispose();
         }
 
-        return this.postActivate(this.context());
+        this.page(context.page);
+        this.route(context.route);
+
+        return postActivate(context.route.page, context.page.viewModel);
       })
-      .then((value) => { // equivalent of always for postActivate
-        this.navigationDeferred.resolve(value);
+      .then(() => {
+        this.navigationDeferred.resolve();
         this.isNavigating(false);
       })
       .catch((reason) => {
         if (reason !== 'navigation hijacked') {
-          this.resetUrl();
+          /* reset url */
+          const route = this.route();
+          if (route) {
+            const pushStateOptions = this.toPushStateOptions(route, {
+              replace: true
+            });
+            this.routerState.pushState(pushStateOptions);
+          }
 
           if (reason == '404') {
             this.navigationDeferred.resolve();
@@ -382,17 +341,6 @@ class Router {
     return window.location.pathname + window.location.search + window.location.hash;
   }
 
-  resetUrl() {
-    const context = this.context();
-
-    if (context) {
-      const pushStateOptions = toPushStateOptions(context, {
-        replace: true // todo: valider que c'est la bonne valeur
-      });
-      this.routerState.pushState(pushStateOptions);
-    }
-  }
-
   convertMatchedRoutes(matchedRoutes, url) {
     const result = [];
 
@@ -406,113 +354,28 @@ class Router {
     return result;
   }
 
-  updateRoute(newUrl, context) {
+  getPrioritizedMatchedRoute(newUrl) {
     // Replace all (/.../g) leading slash (^\/) or (|) trailing slash (\/$) with an empty string.
     let cleanedUrl = newUrl.replace(/^\/|\/$/g, '');
 
     // Remove hash
     cleanedUrl = cleanedUrl.replace(/#.*$/g, '');
 
-    const matchedRoutes = this.byroads.getMatchedRoutes(cleanedUrl, true);
-    let matchedRoute = null;
+    const byroadsMatchedRoutes = this.byroads.getMatchedRoutes(cleanedUrl, true);
+    let prioritizedMatchedRoute = null;
 
-    if (matchedRoutes.length > 0) {
-      const convertedMatchedRoutes = this.convertMatchedRoutes(matchedRoutes, newUrl);
-      matchedRoute = this.getPrioritizedRoute(convertedMatchedRoutes, newUrl);
-
-      context.addMatchedRoute(matchedRoute);
+    if (byroadsMatchedRoutes.length > 0) {
+      const convertedMatchedRoutes = this.convertMatchedRoutes(byroadsMatchedRoutes, newUrl);
+      prioritizedMatchedRoute = this.getPrioritizedRoute(convertedMatchedRoutes, newUrl);
     }
 
-    return matchedRoute;
-  }
-
-  activateAsync(context) {
-    return new Promise((resolve, reject) => {
-      try {
-        const registeredPage = context.route.page;
-        // let basePath = registeredPage.basePath || this.settings.localBasePath + '/' + registeredPage.componentName;
-        // let moduleName = basePath + '/' + registeredPage.componentName;
-        const imported = importModule(registeredPage.componentName, {
-          isHtmlOnly: registeredPage.isHtmlOnly,
-          basePath: registeredPage.basePath,
-          isNpm: registeredPage.isNpm,
-          template: registeredPage.template
-        });
-        const result = {
-          template: ko.utils.parseHtmlFragment(imported.templateString)
-        };
-
-        if (registeredPage.isHtmlOnly === true) {
-          context.page = result;
-          resolve(context);
-        } else {
-          if (isFunction(imported.viewModel)) {
-            result.viewModel = new imported.viewModel(context, {
-              element: this.settings.element,
-              templateNodes: result.template
-            });
-          } else {
-            result.viewModel = imported.viewModel;
-          }
-
-          // todo: rename activate to activateAsync?
-          if (isFunction(result.viewModel.activate)) /* based on convention */ {
-            this.isActivating(true);
-
-            result.viewModel.activate(context)
-              .then(() => {
-                context.page = result;
-                this.isActivating(false);
-                resolve(context);
-              })
-              .catch((reason) => {
-                this.isActivating(false);
-                reject(reason);
-              });
-          } else {
-            context.page = result;
-            resolve(context);
-          }
-        }
-      } catch (err) {
-        reject(err);
-      }
-    });
-  }
-
-  postActivate(context) {
-    return new Promise((resolve, reject) => {
-      try {
-        const registeredPage = context.route.page;
-
-        if (registeredPage.isHtmlOnly === true) {
-          resolve();
-        } else {
-          const viewModel = context.page.viewModel;
-
-          if (viewModel.postActivate) {
-            viewModel.postActivate()
-              .then(() => {
-                resolve();
-              })
-              .catch((reason) => {
-                reject(reason);
-              });
-          } else {
-            resolve();
-          }
-        }
-      } catch (err) {
-        reject(err);
-      }
-    });
+    return prioritizedMatchedRoute;
   }
 
   reload() {
     return new Promise((resolve) => {
       // hack pour rafraichir le formulaire car certain components ne supportent pas bien le two-way data binding!!!! - problematique!
-      // todo: (à tester) je ne pense pas que ca fonctionne ... knockout doit détecter que c'est le même objet et ne rien faire...
-      // il faudrait peut-être Object.assign({}, this.context()) --- créer une copie
+      // todo: (à tester) je ne suis pas certain que ca fonctionne ... knockout doit détecter que c'est le même objet et ne rien faire...
       this.context(Object.assign({}, this.context()));
       resolve();
     });

@@ -6,7 +6,7 @@ class Router {
     this.template = ko.pureComputed(() => {
       const kocoViewModel = koco.viewModel();
 
-      if (kocoViewModel) {
+      if (kocoViewModel && kocoViewModel.page) {
         return { nodes: kocoViewModel.page.template, data: kocoViewModel.page.viewModel };
       }
 

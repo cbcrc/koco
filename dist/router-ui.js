@@ -39,7 +39,7 @@
     this.template = _knockout2.default.pureComputed(function () {
       var kocoViewModel = _koco2.default.viewModel();
 
-      if (kocoViewModel) {
+      if (kocoViewModel && kocoViewModel.page) {
         return { nodes: kocoViewModel.page.template, data: kocoViewModel.page.viewModel };
       }
 
