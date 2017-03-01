@@ -90,6 +90,8 @@
     force: false
   };
 
+  var NAVIGATION_CANCELED_MSG = 'navigation canceled';
+
   // http://stackoverflow.com/a/21489870
   function makeQuerableDeferred(deferred) {
     // Don't create a wrapper for promises that can already be queried.
@@ -356,7 +358,9 @@
 
         // todo: configurable
         this.navigationDeferred.promise.catch(function (ex) {
-          console.log(ex);
+          if (ex !== NAVIGATION_CANCELED_MSG) {
+            console.log(ex);
+          }
         });
 
         var finalOptions = Object.assign({}, DEFAULT_OPTIONS, options || {});
@@ -366,7 +370,7 @@
             _this3.isNavigating(true);
             return _this3.getMatchedRoute(url, finalOptions);
           }
-          return Promise.reject('navigation cancelled by router.navigating.canRoute');
+          return Promise.reject(NAVIGATION_CANCELED_MSG);
         }).then(function (route) {
           if (route) {
             return (0, _kocoUtils.activate)(route.page, _this3.settings.element, { route: route, isDialog: false }, _this3.isActivating).then(function (page) {

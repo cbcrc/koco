@@ -17,6 +17,8 @@ const DEFAULT_OPTIONS = {
   force: false
 };
 
+const NAVIGATION_CANCELED_MSG = 'navigation canceled';
+
 // http://stackoverflow.com/a/21489870
 function makeQuerableDeferred(deferred) {
   // Don't create a wrapper for promises that can already be queried.
@@ -262,7 +264,9 @@ class Router {
 
     // todo: configurable
     this.navigationDeferred.promise.catch((ex) => {
-      console.log(ex);
+      if (ex !== NAVIGATION_CANCELED_MSG) {
+        console.log(ex);
+      }
     });
 
     const finalOptions = Object.assign({}, DEFAULT_OPTIONS, options || {});
@@ -273,7 +277,7 @@ class Router {
           this.isNavigating(true);
           return this.getMatchedRoute(url, finalOptions);
         }
-        return Promise.reject('navigation cancelled by router.navigating.canRoute');
+        return Promise.reject(NAVIGATION_CANCELED_MSG);
       })
       .then((route) => {
         if (route) {
