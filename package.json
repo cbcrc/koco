@@ -1,6 +1,6 @@
 {
   "name": "koco",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "description": "knockout components with routing",
   "main": "src/koco.js",
   "scripts": {
