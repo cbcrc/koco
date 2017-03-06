@@ -311,9 +311,9 @@
               }, function (y) {
                 return reject(y);
               });
+            } else {
+              reject('guardRoute has returned an invalid value. Only string or boolean are supported.');
             }
-
-            reject('guardRoute has returned an invalid value. Only string or boolean are supported.');
           } else {
             resolve(matchedRoute);
           }
