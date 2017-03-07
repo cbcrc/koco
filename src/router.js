@@ -380,7 +380,7 @@ class Router {
     return new Promise((resolve) => {
       // hack pour rafraichir le formulaire car certain components ne supportent pas bien le two-way data binding!!!! - problematique!
       // todo: (à tester) je ne suis pas certain que ca fonctionne ... knockout doit détecter que c'est le même objet et ne rien faire...
-      this.context(Object.assign({}, this.context()));
+      this.page(Object.assign({}, this.page()));
       resolve();
     });
   }

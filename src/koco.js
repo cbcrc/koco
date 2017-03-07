@@ -20,22 +20,7 @@ class Koco {
   constructor() {
     this.isInitialized = false;
     this._router = null;
-    this.viewModel = ko.pureComputed({
-      read: function() {
-        if (!this.isInitialized) {
-          return null;
-        }
-
-        return this._router.context();
-      },
-      write: function(value) {
-        if (!this.isInitialized) {
-          throw 'koco is not is not initialized yet.';
-        }
-        return this._router.context(value);
-      },
-      owner: this
-    });
+    this.viewModel = ko.pureComputed(() => this._router.context());
   }
 
   get router() {

@@ -69,25 +69,14 @@
 
   var Koco = function () {
     function Koco() {
+      var _this = this;
+
       _classCallCheck(this, Koco);
 
       this.isInitialized = false;
       this._router = null;
-      this.viewModel = _knockout2.default.pureComputed({
-        read: function read() {
-          if (!this.isInitialized) {
-            return null;
-          }
-
-          return this._router.context();
-        },
-        write: function write(value) {
-          if (!this.isInitialized) {
-            throw 'koco is not is not initialized yet.';
-          }
-          return this._router.context(value);
-        },
-        owner: this
+      this.viewModel = _knockout2.default.pureComputed(function () {
+        return _this._router.context();
       });
     }
 

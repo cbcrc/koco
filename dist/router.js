@@ -476,7 +476,7 @@
         return new Promise(function (resolve) {
           // hack pour rafraichir le formulaire car certain components ne supportent pas bien le two-way data binding!!!! - problematique!
           // todo: (à tester) je ne suis pas certain que ca fonctionne ... knockout doit détecter que c'est le même objet et ne rien faire...
-          _this4.context(Object.assign({}, _this4.context()));
+          _this4.page(Object.assign({}, _this4.page()));
           resolve();
         });
       }
